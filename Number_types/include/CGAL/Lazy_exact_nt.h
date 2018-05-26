@@ -438,36 +438,8 @@ public :
       return *this = new Lazy_exact_Div<ET>(i, *this, b);
   }
 
-  // Mixed operators. (could be optimized ?)
-  Self & operator+=(CGAL_int(ET) b)
-  { return *this = new Lazy_exact_Add<ET>(*this, b); }
-
-  Self & operator-=(CGAL_int(ET) b)
-  { return *this = new Lazy_exact_Sub<ET>(*this, b); }
-
-  Self & operator*=(CGAL_int(ET) b)
-  { return *this = new Lazy_exact_Mul<ET>(*this, b); }
-
-  Self & operator/=(CGAL_int(ET) b)
-  {
-    CGAL_precondition(b != 0);
-    return *this = new Lazy_exact_Div<ET>(*this, b);
-  }
-
-  Self & operator+=(CGAL_double(ET) b)
-  { return *this = new Lazy_exact_Add<ET>(*this, b); }
-
-  Self & operator-=(CGAL_double(ET) b)
-  { return *this = new Lazy_exact_Sub<ET>(*this, b); }
-
-  Self & operator*=(CGAL_double(ET) b)
-  { return *this = new Lazy_exact_Mul<ET>(*this, b); }
-
-  Self & operator/=(CGAL_double(ET) b)
-  {
-    CGAL_precondition(b != 0);
-    return *this = new Lazy_exact_Div<ET>(*this, b);
-  }
+  // Mixed operators with int and double could be optimized.
+  // However, there is no point providing an unoptimized version.
 
   // % kills filtering
   Self & operator%=(const Self& b)
