@@ -296,9 +296,12 @@ struct NAME : public Lazy_exact_binary<ET, ET1, ET2>                     \
                                                                          \
   void update_exact() const                                              \
   {                                                                      \
-    this->et = new ET(this->op1.exact() OP this->op2.exact());           \
-    if (!this->approx().is_point())                                      \
+    if (this->approx().is_point()){                                      \
+      this->et = new ET(this->approx().inf());                           \
+    } else {                                                             \
+      this->et = new ET(this->op1.exact() OP this->op2.exact());         \
       this->at = CGAL_NTS to_interval(*(this->et));                      \
+    }                                                                    \
     this->prune_dag();                                                   \
    }                                                                     \
 };
