@@ -290,9 +290,14 @@ CGAL_LAZY_UNARY_OP(CGAL_NTS sqrt,   Lazy_exact_Sqrt)
 template <typename ET, typename ET1 = ET, typename ET2 = ET>             \
 struct NAME : public Lazy_exact_binary<ET, ET1, ET2>                     \
 {                                                                        \
-  typedef typename Lazy_exact_binary<ET,ET1,ET2>::AT::Protector P;	 \
+  typedef typename Lazy_exact_binary<ET,ET1,ET2>::AT AT;	         \
+  typedef typename AT::Protector P;	                                 \
+                                                                         \
   NAME (const Lazy_exact_nt<ET1> &a, const Lazy_exact_nt<ET2> &b)        \
     : Lazy_exact_binary<ET, ET1, ET2>((P(), a.approx() OP b.approx()), a, b) {} \
+                                                                         \
+  NAME (AT i, const Lazy_exact_nt<ET1> &a, const Lazy_exact_nt<ET2> &b)  \
+    : Lazy_exact_binary<ET, ET1, ET2>(i, a, b) {}                        \
                                                                          \
   void update_exact() const                                              \
   {                                                                      \
@@ -397,18 +402,40 @@ public :
   { return new Lazy_exact_Opp<ET>(*this); }
 
   Self & operator+=(const Self& b)
-  { return *this = new Lazy_exact_Add<ET>(*this, b); }
+  {
+    AT i = (typename AT::Protector(), this->approx() + b.approx());
+    if(i.is_point())
+      return *this = new Lazy_exact_Cst<ET, double>(i.inf());
+    else
+      return *this = new Lazy_exact_Add<ET>(i, *this, b);
+  }
 
   Self & operator-=(const Self& b)
-  { return *this = new Lazy_exact_Sub<ET>(*this, b); }
+  {
+    AT i = (typename AT::Protector(), this->approx() - b.approx());
+    if(i.is_point())
+      return *this = new Lazy_exact_Cst<ET, double>(i.inf());
+    else
+      return *this = new Lazy_exact_Sub<ET>(i, *this, b);
+  }
 
   Self & operator*=(const Self& b)
-  { return *this = new Lazy_exact_Mul<ET>(*this, b); }
+  {
+    AT i = (typename AT::Protector(), this->approx() * b.approx());
+    if(i.is_point())
+      return *this = new Lazy_exact_Cst<ET, double>(i.inf());
+    else
+      return *this = new Lazy_exact_Mul<ET>(i, *this, b);
+  }
 
   Self & operator/=(const Self& b)
   {
     CGAL_precondition(b != 0);
-    return *this = new Lazy_exact_Div<ET>(*this, b);
+    AT i = (typename AT::Protector(), this->approx() / b.approx());
+    if(i.is_point())
+      return *this = new Lazy_exact_Cst<ET, double>(i.inf());
+    else
+      return *this = new Lazy_exact_Div<ET>(i, *this, b);
   }
 
   // Mixed operators. (could be optimized ?)
