@@ -60,8 +60,7 @@ class Handle
 
     ~Handle()
     {
-	if ( PTR && (--PTR->count == 0))
-	    delete PTR;
+      unlink();
     }
 
     Handle&
@@ -69,11 +68,35 @@ class Handle
     {
       CGAL_precondition( x.PTR != static_cast<Rep*>(0) );
       x.PTR->count++;
-      if ( PTR && (--PTR->count == 0))
-	  delete PTR;
+      unlink();
       PTR = x.PTR;
       return *this;
     }
+
+#ifdef CGAL_CXX11
+    Handle(Handle&& x)
+    {
+      CGAL_precondition( x.PTR != static_cast<Rep*>(0) );
+      PTR = x.PTR;
+      x.PTR = nullptr;
+    }
+
+    Handle&
+    operator=(Handle&& x)
+    {
+      CGAL_precondition( x.PTR != static_cast<Rep*>(0) );
+#if 1
+      std::swap(PTR, x.PTR);
+#else
+      // Alternative to kill the old value faster
+      CGAL_precondition( this != &x );
+      unlink();
+      PTR = x.PTR;
+      x.PTR = nullptr;
+#endif
+      return *this;
+    }
+#endif
 
     int
     refs()  const { return PTR->count; }
@@ -84,6 +107,12 @@ class Handle
 
   protected:
     Rep* PTR;
+
+    void unlink()
+    {
+	if ( PTR && (--PTR->count == 0))
+	    delete PTR;
+    }
 };
 
 //inline Handle::Id_type id(const Handle& x) { return x.id() ; }
