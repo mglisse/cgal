@@ -133,17 +133,7 @@ struct Lazy_exact_nt_rep : public Lazy_exact_nt<ET>::Self_rep
 #endif
 };
 
-// int constant
-template <typename ET>
-struct Lazy_exact_Int_Cst : public Lazy_exact_nt_rep<ET>
-{
-  Lazy_exact_Int_Cst (int i)
-      : Lazy_exact_nt_rep<ET>(double(i)) {}
-
-  void update_exact() const { this->et = new ET((int)this->approx().inf()); }
-};
-
-// double constant
+// constant
 template <typename ET, typename X>
 struct Lazy_exact_Cst : public Lazy_exact_nt_rep<ET>
 {
@@ -155,6 +145,22 @@ struct Lazy_exact_Cst : public Lazy_exact_nt_rep<ET>
   private:
   X cste;
 };
+
+// constant that fits in double, so it isn't necessary to store it separately.
+// Casting to X is not necessary, but constructing ET from int may be faster
+// than constructing from double.
+#define CGAL_LAZY_EXACT_DBL_CST(X) \
+template <typename ET> \
+struct Lazy_exact_Cst<ET, X> : public Lazy_exact_nt_rep<ET> \
+{ \
+  Lazy_exact_Cst (X i) : Lazy_exact_nt_rep<ET>(i) { CGAL_postcondition(this->approx().is_point()); } \
+  void update_exact() const { this->et = new ET(static_cast<X>(this->approx().inf())); } \
+}
+
+CGAL_LAZY_EXACT_DBL_CST(int);
+CGAL_LAZY_EXACT_DBL_CST(unsigned);
+CGAL_LAZY_EXACT_DBL_CST(float);
+CGAL_LAZY_EXACT_DBL_CST(double);
 
 // Exact constant
 template <typename ET>
