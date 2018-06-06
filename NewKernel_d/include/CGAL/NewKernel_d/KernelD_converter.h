@@ -144,12 +144,14 @@ typename typeset_intersection<typename K1::Object_list, typename K2::Object_list
 	KernelD_converter(K1 const&a,K2 const&b):Store_kernel<K1>(a),Store_kernel2<K2>(b){}
 
 	// For boost::result_of, used in transforming_iterator
-	template<class T,int i=is_iterator<T>::value?42:0> struct result:Base::template result<T>{};
+	template<class T,int i=is_iterator<T>::value?42:0,class=void> struct result:Base::template result<T>{};
 	template<class T> struct result<Final_(T),42> {
 		typedef transforming_iterator<Final_,T> type;
 	};
 	template<int i> struct result<Final_(K1),i>{typedef K2 type;};
 	template<int i> struct result<Final_(int),i>{typedef int type;};
+	template<int i> struct result<Final_(Homogeneous_tag),i>{typedef Homogeneous_tag type;};
+	template<class E,int i> struct result<Final_(E),i,typename boost::enable_if<boost::is_enum<E>>::type>{typedef E type;};
 	// Ideally the next 2 would come with Point_tag and Vector_tag, but that's hard...
 	template<int i> struct result<Final_(Origin),i>{typedef Origin type;};
 	template<int i> struct result<Final_(Null_vector),i>{typedef Null_vector type;};
@@ -159,6 +161,9 @@ typename typeset_intersection<typename K1::Object_list, typename K2::Object_list
 	using Base::operator();
 	typename Store_kernel2<K2>::reference2_type operator()(K1 const&)const{return this->kernel2();}
 	int operator()(int i)const{return i;}
+	// TODO: make this more general
+	Homogeneous_tag operator()(Homogeneous_tag t)const{return t;}
+	template<class E> typename boost::enable_if<boost::is_enum<E>,E>::type operator()(E e)const{return e;}
 	Origin operator()(Origin const&o)const{return o;}
 	Null_vector operator()(Null_vector const&v)const{return v;}
 	FT2 operator()(FT1 const&x)const{return c(x);}

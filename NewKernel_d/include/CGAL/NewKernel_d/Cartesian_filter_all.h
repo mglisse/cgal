@@ -25,6 +25,7 @@
 #include <CGAL/NewKernel_d/KernelD_converter.h>
 #include <CGAL/NewKernel_d/Filtered_predicate2.h>
 #include <CGAL/NewKernel_d/Filtered_compute.h>
+#include <CGAL/NewKernel_d/Filtered_construct.h>
 #include <boost/mpl/if.hpp>
 #include <boost/mpl/and.hpp>
 
@@ -58,6 +59,8 @@ struct Cartesian_filter_all : public Base_,
     //TODO: C2A/C2E could be able to convert *this into this->kernel() or this->kernel2().
     typedef KernelD_converter<Kernel_base,AK> C2A;
     typedef KernelD_converter<Kernel_base,EK> C2E;
+    typedef KernelD_converter<AK,Kernel_base> A2B;
+    typedef KernelD_converter<EK,Kernel_base> E2B;
 
     // fix the types
     // TODO: only fix some types, based on some criterion?
@@ -74,14 +77,20 @@ struct Cartesian_filter_all : public Base_,
       typedef typename Get_functor<AK, T>::type AP;
       typedef typename Get_functor<EK, T>::type EP;
       typedef typename Get_type<Kernel_base, FT_tag>::type FT;
+      // This could use Filtered_construct instead.
       typedef Filtered_compute<FT,EP,AP,C2E,C2A> type;
     };
-    //// FIXME: do this part as well
-    //template<class T,class D> struct Functor<T,D,Construct_tag> {
-    //  typedef typename Get_functor<AK, T>::type AP;
-    //  typedef typename Get_functor<EK, T>::type EP;
-    //  typedef Filtered_compute<EP,AP,C2E,C2A> type;
-    //};
+    template<class T,class D> struct Functor<T,D,Construct_tag> {
+      typedef typename Get_functor<AK, T>::type AP;
+      typedef typename Get_functor<EK, T>::type EP;
+      typedef typename map_result_tag<T>::type result_tag;
+      typedef typename Get_type<Cartesian_filter_all,result_tag>::type Res;
+      typedef Filtered_construct<Res,EP,AP,C2E,C2A,E2B,A2B> type;
+    };
+    // FIXME: This uses sqrt, disable for now.
+    // We should also disable it when the double computation is exact (e.g. Compute_point_coordinate for a usual kernel)
+    template<class D> struct Functor<Point_of_sphere_tag,D,Construct_tag> :
+      Inherit_functor<Kernel_base,Point_of_sphere_tag,D> {};
     //// FIXME: what about Misc_tag?
 // TODO:
 //    template<class T> struct Functor<T,No_filter_tag,Predicate_tag> :

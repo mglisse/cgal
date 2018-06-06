@@ -430,6 +430,7 @@ inline
 bool
 has_smaller_relative_precision(const Interval_nt<Protected> & d, double prec)
 {
+  // TODO: tweak the test so the compiler can determine the answer when d was just constructed from a double
   return magnitude(d) == 0 || radius(d) < prec * magnitude(d);
 }
 
@@ -814,6 +815,10 @@ namespace INTERN_INTERVAL_NT {
   double
   to_double (const Interval_nt<Protected> & d)
   {
+    if (!has_smaller_relative_precision(d, .00001))
+      throw Uncertain_conversion_exception(
+	  "Interval has too low relative precision to be converted to double");
+
     return (d.sup() + d.inf()) * 0.5;
     // This may overflow...
   }
