@@ -18,8 +18,8 @@
 //
 // Author(s)     : Marc Glisse
 
-#ifndef CGAL_EPICK_D_H
-#define CGAL_EPICK_D_H
+#ifndef CGAL_EPACK_D_H
+#define CGAL_EPACK_D_H
 
 #include <CGAL/disable_warnings.h>
 
