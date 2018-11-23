@@ -79,6 +79,13 @@ extern "C" {
 #  define CGAL_IA_MAX_DOUBLE (std::numeric_limits<double>::max)()
 #endif
 
+// Embed the rounding direction in instructions.
+//#ifdef __AVX512F__
+//# define CGAL_USE_AVX512F
+//#endif
+#ifdef CGAL_USE_AVX512F
+# include <immintrin.h>
+#endif
 
 // Pure and safe SSE2 mode (g++ -mfpmath=sse && (-msse2 || -march=pentium4))
 // can be detected by :
@@ -290,6 +297,44 @@ inline double IA_bug_sqrt(double d)
 #  define CGAL_BUG_SQRT(d) std::sqrt(d)
 #endif
 
+#ifdef CGAL_USE_AVX512F
+static __m128d castsd_pd128(double d){
+#if 1
+  return _mm_set_sd(d); // { d, 0 }
+#elif 1
+  // essentially the same perf
+  return _mm_set1_pd(d); // { d, d }
+#else
+  // cleanest code, but slower :-(
+  __m128d r;
+  asm("":"=x"(r):"0"(d));
+  return r;
+#endif
+}
+#define CGAL_FUN(fun,intrin) \
+  inline double fun(double a, double b) { \
+    __m128d va = castsd_pd128(a); \
+    __m128d vb = castsd_pd128(b); \
+    __m128d vr = intrin(va, vb, _MM_FROUND_TO_POS_INF|_MM_FROUND_NO_EXC); \
+    return _mm_cvtsd_f64(vr); \
+  }
+CGAL_FUN(CGAL_IA_ADD, _mm_add_round_sd)
+CGAL_FUN(CGAL_IA_SUB, _mm_sub_round_sd)
+CGAL_FUN(CGAL_IA_MUL, _mm_mul_round_sd)
+CGAL_FUN(CGAL_IA_DIV, _mm_div_round_sd)
+#undef CGAL_FUN
+inline double CGAL_IA_SQRT(double a) {
+  __m128d va = castsd_pd128(a);
+  __m128d vr = _mm_sqrt_round_sd(va, va, _MM_FROUND_TO_POS_INF|_MM_FROUND_NO_EXC);
+  return _mm_cvtsd_f64(vr);
+}
+inline double CGAL_IA_SQRT_DOWN(double a) {
+  __m128d va = castsd_pd128(a);
+  __m128d vr = _mm_sqrt_round_sd(va, va, _MM_FROUND_TO_NEG_INF|_MM_FROUND_NO_EXC);
+  return _mm_cvtsd_f64(vr);
+}
+#define CGAL_IA_SQRT_DOWN CGAL_IA_SQRT_DOWN
+#else
 // Here are the operator macros that make use of the above.
 // With GCC, we can do slightly better : test with __builtin_constant_p()
 // that both arguments are constant before stopping one of them.
@@ -298,9 +343,10 @@ inline double IA_bug_sqrt(double d)
 #define CGAL_IA_SUB(a,b) CGAL_IA_FORCE_TO_DOUBLE(CGAL_IA_STOP_CPROP(a)-(b))
 #define CGAL_IA_MUL(a,b) CGAL_IA_FORCE_TO_DOUBLE((a)*CGAL_IA_STOP_CPROP(b))
 #define CGAL_IA_DIV(a,b) CGAL_IA_FORCE_TO_DOUBLE((a)/CGAL_IA_STOP_CPROP(b))
-#define CGAL_IA_SQUARE(a) CGAL_IA_MUL(a,a)
 #define CGAL_IA_SQRT(a) \
         CGAL_IA_FORCE_TO_DOUBLE(CGAL_BUG_SQRT(CGAL_IA_STOP_CPROP(a)))
+#endif
+#define CGAL_IA_SQUARE(a) CGAL_IA_MUL(a,a)
 
 
 #if defined CGAL_SAFE_SSE2

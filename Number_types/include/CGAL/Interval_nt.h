@@ -66,8 +66,14 @@ public:
   typedef double      value_type;
 
   typedef Uncertain_conversion_exception            unsafe_comparison;
+#ifdef CGAL_USE_AVX512F
+  // End the protection racket!
+  typedef Protect_FPU_rounding<false>               Internal_protector;
+  typedef Protect_FPU_rounding<false>               Protector;
+#else
   typedef Checked_protect_FPU_rounding<Protected>   Internal_protector;
   typedef Protect_FPU_rounding<!Protected>          Protector;
+#endif
 
   Interval_nt()
 #ifndef CGAL_NO_ASSERTIONS
@@ -835,9 +841,13 @@ namespace INTERN_INTERVAL_NT {
     // sqrt([+a,+b]) => [sqrt(+a);sqrt(+b)]
     // sqrt([-a,+b]) => [0;sqrt(+b)] => assumes roundoff error.
     // sqrt([-a,-b]) => [0;sqrt(-b)] => assumes user bug (unspecified result).
+#ifdef CGAL_IA_SQRT_DOWN
+    double i = (d.inf() > 0.0) ? CGAL_IA_SQRT_DOWN(d.inf()) : 0.0;
+#else
     FPU_set_cw(CGAL_FE_DOWNWARD);
     double i = (d.inf() > 0.0) ? CGAL_IA_SQRT(d.inf()) : 0.0;
     FPU_set_cw(CGAL_FE_UPWARD);
+#endif
     return Interval_nt<Protected>(i, CGAL_IA_SQRT(d.sup()));
   }
 
