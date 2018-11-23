@@ -508,8 +508,8 @@ Interval_nt<Protected>
 operator+ (const Interval_nt<Protected> &a, const Interval_nt<Protected> & b)
 {
   typename Interval_nt<Protected>::Internal_protector P;
-  return Interval_nt<Protected> (-CGAL_IA_SUB(-a.inf(), b.inf()),
-                                  CGAL_IA_ADD(a.sup(), b.sup()));
+  return Interval_nt<Protected> (CGAL_IA_ADD_DOWN(a.inf(), b.inf()),
+                                 CGAL_IA_ADD(a.sup(), b.sup()));
 }
 
 template <bool Protected>
@@ -541,8 +541,8 @@ Interval_nt<Protected>
 operator- (const Interval_nt<Protected> &a, const Interval_nt<Protected> & b)
 {
   typename Interval_nt<Protected>::Internal_protector P;
-  return Interval_nt<Protected>(-CGAL_IA_SUB(b.sup(), a.inf()),
-                                 CGAL_IA_SUB(a.sup(), b.inf()));
+  return Interval_nt<Protected>(CGAL_IA_SUB_DOWN(a.inf(), b.sup()),
+                                CGAL_IA_SUB(a.sup(), b.inf()));
 }
 
 template <bool Protected>
@@ -580,7 +580,7 @@ operator* (const Interval_nt<Protected> &a, const Interval_nt<Protected> & b)
 	if (b.sup() < 0.0)
 	    bb = a.inf();
     }
-    return IA(-CGAL_IA_MUL(aa, -b.inf()), CGAL_IA_MUL(bb, b.sup()));
+    return IA(CGAL_IA_MUL_DOWN(aa, b.inf()), CGAL_IA_MUL(bb, b.sup()));
   }
   else if (a.sup()<=0.0)				// a<=0
   {
@@ -594,22 +594,22 @@ operator* (const Interval_nt<Protected> &a, const Interval_nt<Protected> & b)
 	if (b.sup() < 0.0)
 	    bb=a.sup();
     }
-    return IA(-CGAL_IA_MUL(bb, -b.sup()), CGAL_IA_MUL(aa, b.inf()));
+    return IA(CGAL_IA_MUL_DOWN(bb, b.sup()), CGAL_IA_MUL(aa, b.inf()));
   }
   else						// 0 \in a
   {
     if (b.inf()>=0.0)				// b>=0
-      return IA(-CGAL_IA_MUL(a.inf(), -b.sup()),
-                 CGAL_IA_MUL(a.sup(), b.sup()));
+      return IA(CGAL_IA_MUL_DOWN(a.inf(), b.sup()),
+                CGAL_IA_MUL(a.sup(), b.sup()));
     if (b.sup()<=0.0)				// b<=0
-      return IA(-CGAL_IA_MUL(a.sup(), -b.inf()),
-                 CGAL_IA_MUL(a.inf(), b.inf()));
+      return IA(CGAL_IA_MUL_DOWN(a.sup(), b.inf()),
+                CGAL_IA_MUL(a.inf(), b.inf()));
         					// 0 \in b
-    double tmp1 = CGAL_IA_MUL(a.inf(), -b.sup());
-    double tmp2 = CGAL_IA_MUL(a.sup(), -b.inf());
+    double tmp1 = CGAL_IA_MUL_DOWN(a.inf(), b.sup());
+    double tmp2 = CGAL_IA_MUL_DOWN(a.sup(), b.inf());
     double tmp3 = CGAL_IA_MUL(a.inf(),  b.inf());
     double tmp4 = CGAL_IA_MUL(a.sup(),  b.sup());
-    return IA(-(std::max)(tmp1,tmp2), (std::max)(tmp3,tmp4));
+    return IA((std::min)(tmp1,tmp2), (std::max)(tmp3,tmp4));
   }
 }
 
@@ -648,7 +648,7 @@ operator/ (const Interval_nt<Protected> &a, const Interval_nt<Protected> & b)
 	if (a.sup() < 0.0)
 	    bb = b.sup();
     }
-    return IA(-CGAL_IA_DIV(a.inf(), -aa), CGAL_IA_DIV(a.sup(), bb));
+    return IA(CGAL_IA_DIV_DOWN(a.inf(), aa), CGAL_IA_DIV(a.sup(), bb));
   }
   else if (b.sup()<0.0)			// b<0
   {
@@ -662,7 +662,7 @@ operator/ (const Interval_nt<Protected> &a, const Interval_nt<Protected> & b)
 	if (a.sup() < 0.0)
 	    aa = b.inf();
     }
-    return IA(-CGAL_IA_DIV(a.sup(), -aa), CGAL_IA_DIV(a.inf(), bb));
+    return IA(CGAL_IA_DIV_DOWN(a.sup(), aa), CGAL_IA_DIV(a.inf(), bb));
   }
   else					// b~0
     return IA::largest();

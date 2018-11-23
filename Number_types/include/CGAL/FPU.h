@@ -317,6 +317,12 @@ static __m128d castsd_pd128(double d){
     __m128d vb = castsd_pd128(b); \
     __m128d vr = intrin(va, vb, _MM_FROUND_TO_POS_INF|_MM_FROUND_NO_EXC); \
     return _mm_cvtsd_f64(vr); \
+  } \
+  inline double fun##_DOWN(double a, double b) { \
+    __m128d va = castsd_pd128(a); \
+    __m128d vb = castsd_pd128(b); \
+    __m128d vr = intrin(va, vb, _MM_FROUND_TO_NEG_INF|_MM_FROUND_NO_EXC); \
+    return _mm_cvtsd_f64(vr); \
   }
 CGAL_FUN(CGAL_IA_ADD, _mm_add_round_sd)
 CGAL_FUN(CGAL_IA_SUB, _mm_sub_round_sd)
@@ -345,6 +351,10 @@ inline double CGAL_IA_SQRT_DOWN(double a) {
 #define CGAL_IA_DIV(a,b) CGAL_IA_FORCE_TO_DOUBLE((a)/CGAL_IA_STOP_CPROP(b))
 #define CGAL_IA_SQRT(a) \
         CGAL_IA_FORCE_TO_DOUBLE(CGAL_BUG_SQRT(CGAL_IA_STOP_CPROP(a)))
+#define CGAL_IA_ADD_DOWN(a,b) -CGAL_IA_SUB(-a,b)
+#define CGAL_IA_SUB_DOWN(a,b) -CGAL_IA_SUB(b,a)
+#define CGAL_IA_MUL_DOWN(a,b) -CGAL_IA_MUL(a,-b)
+#define CGAL_IA_DIV_DOWN(a,b) -CGAL_IA_DIV(a,-b)
 #endif
 #define CGAL_IA_SQUARE(a) CGAL_IA_MUL(a,a)
 
