@@ -40,6 +40,7 @@
 // - test whether stopping constant propagation only in functions taking
 //   double as arguments, improves performance.
 
+#include <x86intrin.h>
 #include <utility> // for std::pair
 #include <CGAL/number_type_config.h>
 #include <CGAL/number_utils.h>
@@ -187,7 +188,7 @@ public:
 
   bool is_point() const
   {
-    // sup()-inf()==0 might help a compiler generate the SSE3 haddpd.
+    // TODO: sup()-inf()==0 might help a compiler generate the SSE3 haddpd.
     return sup() == inf();
   }
 
@@ -756,6 +757,14 @@ operator- (const Interval_nt<Protected> & a, int b)
   return a-static_cast<double>(b);
 }
 
+#if 0
+static __m128d _mm_blendv_pd(__m128d n, __m128d p, __m128d m){
+  __m128d pp=_mm_and_pd(m,p);
+  __m128d nn=_mm_andnot_pd(m,n);
+  return _mm_or_pd(pp,nn);
+}
+#endif
+
 template <bool Protected>
 inline
 Interval_nt<Protected>
@@ -763,8 +772,10 @@ operator* (const Interval_nt<Protected> &a, const Interval_nt<Protected> & b)
 {
   typedef Interval_nt<Protected> IA;
   typename Interval_nt<Protected>::Internal_protector P;
-
+//FIXME: use protection for all variants
 #ifdef CGAL_USE_SSE2
+# if 0
+  // With branches, better than scalar but still not so fast.
   __m128d aa = a.simd();
   double t = -b.inf(); // -bi
   double u = b.sup();  //  bs
@@ -780,6 +791,116 @@ operator* (const Interval_nt<Protected> &a, const Interval_nt<Protected> & b)
   if (u < 0)   y = CGAL_IA_M128D_MUL (_mm_set1_pd (-u), ap); // {-as*bs,ai*bs}
   else         y = CGAL_IA_M128D_MUL (_mm_set1_pd ( u), aa); // {-ai*bs,as*bs}
   return IA (_mm_max_pd (x, y));
+# elif 0
+  // Another branchy version with less _mm_set1_pd
+  // barely better
+  // swapping a and b sometimes improves the timing...
+  __m128d aa = a.simd();				// {-ai,as}
+  __m128d bb = b.simd();				// {-bi,bs}
+  double nai = _mm_cvtsd_f64(aa);			// -ai
+  __m128d ap = _mm_shuffle_pd (aa, aa, 1);		// {as,-ai}
+  if(nai<=0){
+    __m128d mi = _mm_set_sd(-0.);			// {-0,+0}
+    __m128d c = _mm_xor_pd(aa, mi);			// {ai,as}
+    __m128d cp = _mm_shuffle_pd (c, c, 1);		// {as,ai}
+    __m128d x = _mm_mul_pd(c,bb);			// {-ai*bi,as*bs}
+    __m128d y = _mm_mul_pd(cp,bb);			// {-as*bi,ai*bs}
+    return IA(_mm_max_pd(x,y));
+  }else if(_mm_cvtsd_f64(ap)<=0){
+    __m128d ms = _mm_setr_pd(0.,-0.);			// {+0,-0}
+    __m128d c = _mm_xor_pd(aa, ms);			// {-ai,-as}
+    __m128d cp = _mm_shuffle_pd (c, c, 1);		// {-as,-ai}
+    __m128d bp = _mm_shuffle_pd (bb, bb, 1);		// {bs,-bi}
+    __m128d x = _mm_mul_pd(c,bp);			// {-ai*bs,as*bi}
+    __m128d y = _mm_mul_pd(cp,bp);			// {-as*bs,ai*bi}
+    return IA(_mm_max_pd(x,y));
+  }else{
+    __m128d c = _mm_unpackhi_pd(bb, bb);		// {bs,bs}
+    __m128d d = _mm_set1_pd(_mm_cvtsd_f64(bb));		// {-bi,-bi}
+    __m128d x = _mm_mul_pd(c, aa);			// {-ai*bs,as*bs}
+    __m128d y = _mm_mul_pd(d, ap);			// {-as*bi,ai*bi}
+    return IA(_mm_max_pd(x,y));
+  }
+# elif 0
+// we want to multiply -ai,as with {ai<0?bs:bi,as<0?bi:bs}
+// we want to multiply -as,ai with {as<0?bs:bi,ai<0?bi:bs}
+// too many xor
+  __m128d m = _mm_set_sd(-0.);				// {-0,+0}
+  __m128d m1 = _mm_set1_pd(-0.);			// {-0,-0}
+  __m128d aa = a.simd();				// {-ai,as}
+  __m128d ax = _mm_shuffle_pd (aa, aa, 1);		// {as,-ai}
+  __m128d ap = _mm_xor_pd (ax, m1);			// {-as,ai}
+  __m128d bb = _mm_xor_pd(b.simd(), m);			// {bi,bs}
+  __m128d bp = _mm_shuffle_pd (bb, bb, 1);		// {bs,bi}
+  __m128d az = _mm_xor_pd(aa, m);			// {ai,as}
+  __m128d neg = _mm_cmplt_pd (az, _mm_setzero_pd());	// {ai<0,as<0}
+  __m128d x = _mm_blendv_pd (bb, bp, neg);		// {ai<0?bs:bi,as<0?bi:bs}
+  __m128d negp = _mm_shuffle_pd (neg, neg, 1);		// {as<0,ai<0}
+  __m128d y = _mm_blendv_pd (bb, bp, negp);		// {as<0?bs:bi,ai<0?bi:bs}
+  __m128d p1 = _mm_mul_pd (aa, x);
+  __m128d p2 = _mm_mul_pd (ap, y);
+  return IA (_mm_max_pd (p1, p2));
+# elif 0
+// we want to multiply ai,as with {ai<0?-bs:-bi,as<0?bi:bs}
+// we want to multiply as,ai with {as<0?-bs:-bi,ai<0?bi:bs}
+// best?
+  __m128d m = _mm_set_sd(-0.);				// {-0,+0}
+  __m128d m1 = _mm_set1_pd(-0.);			// {-0,-0}
+  __m128d aa = a.simd();				// {-ai,as}
+  __m128d az = _mm_xor_pd(aa, m);			// {ai,as}
+  __m128d azp = _mm_shuffle_pd (az, az, 1);		// {as,ai}
+  __m128d bb = b.simd();				// {-bi,bs}
+  __m128d bx = _mm_shuffle_pd (bb, bb, 1);		// {bs,-bi}
+  __m128d bp = _mm_xor_pd(bx, m1);			// {-bs,bi}
+  // Reuse m or m1 instead of creating {0,0}?
+  __m128d neg = _mm_cmplt_pd (az, _mm_setzero_pd());	// {ai<0,as<0}
+  __m128d x = _mm_blendv_pd (bb, bp, neg);		// {ai<0?-bs:-bi,as<0?bi:bs}
+  __m128d negp = _mm_shuffle_pd (neg, neg, 1);		// {as<0,ai<0}
+  __m128d y = _mm_blendv_pd (bb, bp, negp);		// {as<0?-bs:-bi,ai<0?bi:bs}
+  __m128d p1 = _mm_mul_pd (az, x);
+  __m128d p2 = _mm_mul_pd (azp, y);
+  return IA (_mm_max_pd (p1, p2));
+# elif 0
+// we want to multiply -ai,as with {ai>0?bi:bs,as<0?bi:bs}
+// we want to multiply -as,ai with {as<0?bs:bi,ai>0?bs:bi}
+// slower
+  __m128d m = _mm_set_sd(-0.);				// {-0,+0}
+  __m128d m1 = _mm_set1_pd(-0.);			// {-0,-0}
+  __m128d aa = a.simd();				// {-ai,as}
+  __m128d ax = _mm_shuffle_pd (aa, aa, 1);		// {as,-ai}
+  __m128d ap = _mm_xor_pd (ax, m1);			// {-as,ai}
+  __m128d bb = b.simd();				// {-bi,bs}
+  double bi = -_mm_cvtsd_f64(bb);
+  double bs = _mm_cvtsd_f64(_mm_unpackhi_pd(bb,bb));
+  __m128d bbi = _mm_set1_pd(bi);			// {bi,bi}
+  __m128d bbs = _mm_set1_pd(bs);			// {bs,bs}
+  __m128d neg = _mm_cmplt_pd (aa, _mm_setzero_pd());	// {ai>0,as<0}
+  __m128d x = _mm_blendv_pd (bbs, bbi, neg);		// {ai>0?bi:bs,as<0?bi:bs}
+  __m128d negp = _mm_shuffle_pd (neg, neg, 1);		// {as<0,ai>0}
+  __m128d y = _mm_blendv_pd (bbi, bbs, negp);		// {as<0?bs:bi,ai>0?bs:bi}
+  __m128d p1 = _mm_mul_pd (aa, x);
+  __m128d p2 = _mm_mul_pd (ap, y);
+  return IA (_mm_max_pd (p1, p2));
+# else
+  // Brutal, compute all products in all directions.
+  // The actual winner (by a hair) on recent hardware
+  // Try the brutal approach using AVX?
+  __m128d aa = a.simd();				// {-ai,as}
+  __m128d bb = b.simd();				// {-bi,bs}
+  __m128d m = _mm_set_sd(-0.);				// {-0,+0}
+  __m128d m1 = _mm_set1_pd(-0.);			// {-0,-0}
+  __m128d ax = _mm_shuffle_pd (aa, aa, 1);		// {as,-ai}
+  __m128d ap = _mm_xor_pd (ax, m1);			// {-as,ai}
+  __m128d bz = _mm_xor_pd(bb, m);			// {bi,bs}
+  __m128d c = _mm_shuffle_pd (bz, bz, 1);		// {bs,bi}
+  __m128d x1 = _mm_mul_pd(aa,bz);			// {-ai*bi,as*bs}
+  __m128d x2 = _mm_mul_pd(aa,c);			// {-ai*bs,as*bi}
+  __m128d x3 = _mm_mul_pd(ap,bz);			// {-as*bi,ai*bs}
+  __m128d x4 = _mm_mul_pd(ap,c);			// {-as*bs,ai*bi}
+  __m128d y1 = _mm_max_pd(x1,x2);
+  __m128d y2 = _mm_max_pd(x3,x4);
+  return IA (_mm_max_pd (y1, y2));
+# endif
 #else
 
   if (a.inf() >= 0.0)					// a>=0
@@ -934,6 +1055,7 @@ inline
 Interval_nt<Protected>
 operator/ (double a, const Interval_nt<Protected> & b)
 {
+  // TODO: specialize
   return Interval_nt<Protected>(a)/b;
 }
 
@@ -1214,6 +1336,7 @@ namespace INTERN_INTERVAL_NT {
   Uncertain<bool>
   is_zero (const Interval_nt<Protected> & d)
   {
+    // TODO: try using _mm_movemask_pd+_mm_cmp*_pd and is_point
     if (d.inf() > 0.0) return false;
     if (d.sup() < 0.0) return false;
     if (d.inf() == d.sup()) return true;
