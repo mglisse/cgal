@@ -840,7 +840,7 @@ operator* (const Interval_nt<Protected> &a, const Interval_nt<Protected> & b)
   __m128d p1 = _mm_mul_pd (aa, x);
   __m128d p2 = _mm_mul_pd (ap, y);
   return IA (_mm_max_pd (p1, p2));
-# elif 0
+# elif 1
 // we want to multiply ai,as with {ai<0?-bs:-bi,as<0?bi:bs}
 // we want to multiply as,ai with {as<0?-bs:-bi,ai<0?bi:bs}
 // best?
@@ -881,10 +881,9 @@ operator* (const Interval_nt<Protected> &a, const Interval_nt<Protected> & b)
   __m128d p1 = _mm_mul_pd (aa, x);
   __m128d p2 = _mm_mul_pd (ap, y);
   return IA (_mm_max_pd (p1, p2));
-# else
+# elif 0
   // Brutal, compute all products in all directions.
   // The actual winner (by a hair) on recent hardware
-  // Try the brutal approach using AVX?
   __m128d aa = a.simd();				// {-ai,as}
   __m128d bb = b.simd();				// {-bi,bs}
   __m128d m = _mm_set_sd(-0.);				// {-0,+0}
@@ -900,6 +899,24 @@ operator* (const Interval_nt<Protected> &a, const Interval_nt<Protected> & b)
   __m128d y1 = _mm_max_pd(x1,x2);
   __m128d y2 = _mm_max_pd(x3,x4);
   return IA (_mm_max_pd (y1, y2));
+# else
+  // AVX version of the brutal method, same running time
+  __m128d aa = a.simd();				// {-ai,as}
+  __m128d bb = b.simd();				// {-bi,bs}
+  __m128d m = _mm_set_sd(-0.);				// {-0,+0}
+  __m128d m1 = _mm_set1_pd(-0.);			// {-0,-0}
+  __m128d ax = _mm_shuffle_pd (aa, aa, 1);		// {as,-ai}
+  __m128d ap = _mm_xor_pd (ax, m1);			// {-as,ai}
+  __m128d bz = _mm_xor_pd(bb, m);			// {bi,bs}
+  __m256d X = _mm256_set_m128d(ap,aa);			// {-ai,as,-as,ai}
+  __m256d Y1 = _mm256_set_m128d(bz,bz);			// {bi,bs,bi,bs}
+  __m256d Y2 = _mm256_permute_pd(Y1,5);			// {bs,bi,bs,bi}
+  __m256d Z1 = _mm256_mul_pd(X,Y1);
+  __m256d Z2 = _mm256_mul_pd(X,Y2);
+  __m256d Z = _mm256_max_pd(Z1,Z2);
+  __m128d z1 = _mm256_castpd256_pd128(Z);
+  __m128d z2 = _mm256_extractf128_pd(Z,1);
+  return IA (_mm_max_pd (z1, z2));
 # endif
 #else
 
