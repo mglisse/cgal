@@ -858,10 +858,10 @@ namespace INTERN_INTERVAL_NT {
   {
     typename Interval_nt<Protected>::Internal_protector P;
     if (d.inf()>=0.0)
-        return Interval_nt<Protected>(-CGAL_IA_MUL(d.inf(), -d.inf()),
+        return Interval_nt<Protected>(CGAL_IA_MUL_DOWN(d.inf(), d.inf()),
                                  CGAL_IA_MUL(d.sup(), d.sup()));
     if (d.sup()<=0.0)
-        return Interval_nt<Protected>(-CGAL_IA_MUL(d.sup(), -d.sup()),
+        return Interval_nt<Protected>(CGAL_IA_MUL_DOWN(d.sup(), d.sup()),
                                CGAL_IA_MUL(d.inf(), d.inf()));
     return Interval_nt<Protected>(0.0, CGAL_IA_SQUARE((std::max)(-d.inf(),
                      d.sup())));
