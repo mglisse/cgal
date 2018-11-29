@@ -675,6 +675,7 @@ inline
 Interval_nt<Protected>
 operator/ (double a, const Interval_nt<Protected> & b)
 {
+  // TODO: specialize
   return Interval_nt<Protected>(a)/b;
 }
 
@@ -844,6 +845,11 @@ namespace INTERN_INTERVAL_NT {
 #ifdef CGAL_IA_SQRT_DOWN
     double i = (d.inf() > 0.0) ? CGAL_IA_SQRT_DOWN(d.inf()) : 0.0;
 #else
+    // Alternative for computing CGAL_IA_SQRT_DOWN(d.inf()) exactly
+    // without changing the rounding mode:
+    // - compute x = CGAL_IA_SQRT(d.inf())
+    // - compute y = CGAL_IA_SQUARE(x)
+    // - if y==d.inf() use x, else use CGAL_IA_SUB_DOWN(x,CGAL_IA_MIN_DOUBLE)
     FPU_set_cw(CGAL_FE_DOWNWARD);
     double i = (d.inf() > 0.0) ? CGAL_IA_SQRT(d.inf()) : 0.0;
     FPU_set_cw(CGAL_FE_UPWARD);
