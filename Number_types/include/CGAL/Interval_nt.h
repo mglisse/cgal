@@ -759,6 +759,7 @@ operator- (const Interval_nt<Protected> & a, int b)
 
 #if 0
 static __m128d _mm_blendv_pd(__m128d n, __m128d p, __m128d m){
+  //FIXME: needs m=_mm_cmplt_pd(m,_mm_setzero_pd());
   __m128d pp=_mm_and_pd(m,p);
   __m128d nn=_mm_andnot_pd(m,n);
   return _mm_or_pd(pp,nn);
@@ -852,19 +853,15 @@ operator* (const Interval_nt<Protected> &a, const Interval_nt<Protected> & b)
   __m128d bb = b.simd();				// {-bi,bs}
   __m128d bx = _mm_shuffle_pd (bb, bb, 1);		// {bs,-bi}
   __m128d bp = _mm_xor_pd(bx, m1);			// {-bs,bi}
-  // Reuse m or m1 instead of creating {0,0}?
-  __m128d neg = _mm_cmplt_pd (az, _mm_setzero_pd());	// {ai<0,as<0}
-  __m128d x = _mm_blendv_pd (bb, bp, neg);		// {ai<0?-bs:-bi,as<0?bi:bs}
-  __m128d negp = _mm_shuffle_pd (neg, neg, 1);		// {as<0,ai<0}
-  __m128d y = _mm_blendv_pd (bb, bp, negp);		// {as<0?-bs:-bi,ai<0?bi:bs}
+  __m128d x = _mm_blendv_pd (bb, bp, az);		// {ai<0?-bs:-bi,as<0?bi:bs}
+  __m128d y = _mm_blendv_pd (bb, bp, azp);		// {as<0?-bs:-bi,ai<0?bi:bs}
   __m128d p1 = _mm_mul_pd (az, x);
   __m128d p2 = _mm_mul_pd (azp, y);
   return IA (_mm_max_pd (p1, p2));
 # elif 0
 // we want to multiply -ai,as with {ai>0?bi:bs,as<0?bi:bs}
 // we want to multiply -as,ai with {as<0?bs:bi,ai>0?bs:bi}
-// slower
-  __m128d m = _mm_set_sd(-0.);				// {-0,+0}
+// comparable
   __m128d m1 = _mm_set1_pd(-0.);			// {-0,-0}
   __m128d aa = a.simd();				// {-ai,as}
   __m128d ax = _mm_shuffle_pd (aa, aa, 1);		// {as,-ai}
@@ -874,10 +871,8 @@ operator* (const Interval_nt<Protected> &a, const Interval_nt<Protected> & b)
   double bs = _mm_cvtsd_f64(_mm_unpackhi_pd(bb,bb));
   __m128d bbi = _mm_set1_pd(bi);			// {bi,bi}
   __m128d bbs = _mm_set1_pd(bs);			// {bs,bs}
-  __m128d neg = _mm_cmplt_pd (aa, _mm_setzero_pd());	// {ai>0,as<0}
-  __m128d x = _mm_blendv_pd (bbs, bbi, neg);		// {ai>0?bi:bs,as<0?bi:bs}
-  __m128d negp = _mm_shuffle_pd (neg, neg, 1);		// {as<0,ai>0}
-  __m128d y = _mm_blendv_pd (bbi, bbs, negp);		// {as<0?bs:bi,ai>0?bs:bi}
+  __m128d x = _mm_blendv_pd (bbs, bbi, aa);		// {ai>0?bi:bs,as<0?bi:bs}
+  __m128d y = _mm_blendv_pd (bbi, bbs, ax);		// {as<0?bs:bi,ai>0?bs:bi}
   __m128d p1 = _mm_mul_pd (aa, x);
   __m128d p2 = _mm_mul_pd (ap, y);
   return IA (_mm_max_pd (p1, p2));
@@ -900,7 +895,7 @@ operator* (const Interval_nt<Protected> &a, const Interval_nt<Protected> & b)
   __m128d y2 = _mm_max_pd(x3,x4);
   return IA (_mm_max_pd (y1, y2));
 # else
-  // AVX version of the brutal method, same running time
+  // AVX version of the brutal method, same running time or slower
   __m128d aa = a.simd();				// {-ai,as}
   __m128d bb = b.simd();				// {-bi,bs}
   __m128d m = _mm_set_sd(-0.);				// {-0,+0}
@@ -1292,6 +1287,7 @@ namespace INTERN_INTERVAL_NT {
     typename Interval_nt<Protected>::Internal_protector P;
     if (d.inf()>=0.0)
 #ifdef CGAL_USE_SSE2
+      // TODO: try a branchless version
       {
 	__m128d x = d.simd();
 	__m128d r = CGAL_IA_M128D_MUL (_mm_xor_pd (x, _mm_set_sd (-0.)), x);
