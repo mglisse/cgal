@@ -336,27 +336,23 @@ Uncertain<bool> operator&(Uncertain<bool> a, bool b)
   return Uncertain<bool>(a.inf() & b, a.sup() & b);
 }
 
-// operator&& and operator|| are not provided because, unless their bool counterpart,
+// operator&& and operator|| are not provided because, unlike their bool counterpart,
 // they lack the "short-circuiting" property.
 // We provide macros CGAL_AND and CGAL_OR, which attempt to emulate their behavior.
 // Key things : do not evaluate expressions twice, and evaluate the right hand side
 // expression only when needed.
-// TODO : C++0x lambdas should be able to help here.
-#ifdef CGAL_CFG_NO_STATEMENT_EXPRESSIONS
-#  define CGAL_AND(X, Y)  ((X) && (Y))
-#  define CGAL_OR(X, Y)   ((X) || (Y))
-#else
-#  define CGAL_AND(X, Y) \
-       __extension__ \
-       ({ CGAL::Uncertain<bool> CGAL_TMP = (X); \
-          CGAL::certainly_not(CGAL_TMP) ? CGAL::make_uncertain(false) \
-                                        : CGAL_TMP & CGAL::make_uncertain((Y)); })
-#  define CGAL_OR(X, Y) \
-       __extension__ \
-       ({ CGAL::Uncertain<bool> CGAL_TMP = (X); \
-          CGAL::certainly(CGAL_TMP) ? CGAL::make_uncertain(true) \
-                                    : CGAL_TMP | CGAL::make_uncertain((Y)); })
-#endif
+#define CGAL_AND(X, Y) \
+  ([&]() -> CGAL::Uncertain<bool> { \
+    CGAL::Uncertain<bool> tmp = (X); \
+    if (CGAL::certainly_not(tmp)) return false; \
+    return tmp & (Y); \
+  }())
+#define CGAL_OR(X, Y) \
+  ([&]() -> CGAL::Uncertain<bool> { \
+    CGAL::Uncertain<bool> tmp = (X); \
+    if (CGAL::certainly(tmp)) return true; \
+    return tmp | (Y); \
+  }())
 
 #define CGAL_AND_3(X, Y, Z)  CGAL_AND(X, CGAL_AND(Y, Z))
 #define CGAL_OR_3(X, Y, Z)   CGAL_OR(X, CGAL_OR(Y, Z))
