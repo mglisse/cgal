@@ -35,6 +35,12 @@
 #  define CGAL_Kernel_pred(X, Y)
 #endif
 
+// Those predicates for which Simple_cartesian is guaranteed not to
+// perform any arithmetic (just comparisons).
+#ifndef CGAL_Kernel_pred_nop
+#  define CGAL_Kernel_pred_nop(X, Y) CGAL_Kernel_pred(X, Y)
+#endif
+
 // Those predicates for which Simple_cartesian is guaranteed not to use
 // any division.
 #ifndef CGAL_Kernel_pred_RT
@@ -569,7 +575,7 @@ CGAL_Kernel_pred(Less_signed_distance_to_line_2,
                  less_signed_distance_to_line_2_object)
 CGAL_Kernel_pred(Less_signed_distance_to_plane_3,
 		 less_signed_distance_to_plane_3_object)
-CGAL_Kernel_pred(Less_xyz_3,
+CGAL_Kernel_pred_nop(Less_xyz_3,
 		 less_xyz_3_object)
 CGAL_Kernel_pred(Less_xy_2,
 		 less_xy_2_object)
@@ -613,6 +619,7 @@ CGAL_Kernel_pred_RT(Side_of_oriented_sphere_3,
 		    side_of_oriented_sphere_3_object)
 
 #undef CGAL_Kernel_pred_RT
+#undef CGAL_Kernel_pred_nop
 #undef CGAL_Kernel_pred
 #undef CGAL_Kernel_cons
 #undef CGAL_Kernel_obj

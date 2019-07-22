@@ -272,9 +272,15 @@ public:
 #define CGAL_Kernel_pred(P, Pf)                                         \
     typedef Filtered_predicate<typename Exact_kernel::P, typename Approximate_kernel::P, C2E, C2F> P; \
     P Pf() const { return P(); }
+#define CGAL_Kernel_pred_nop(P, Pf)                                         \
+    typedef Filtered_predicate<typename Exact_kernel::P, typename Approximate_kernel::P, C2E, C2F, false> P; \
+    P Pf() const { return P(); }
 #else
 #define CGAL_Kernel_pred(P, Pf)  \
   typedef Static_filtered_predicate<Approximate_kernel, Filtered_predicate<typename Exact_kernel::P, typename Approximate_kernel::P, C2E, C2F>, Exact_predicates_inexact_constructions_kernel::P> P; \
+    P Pf() const { return P(); }
+#define CGAL_Kernel_pred_nop(P, Pf)  \
+  typedef Static_filtered_predicate<Approximate_kernel, Filtered_predicate<typename Exact_kernel::P, typename Approximate_kernel::P, C2E, C2F, false>, Exact_predicates_inexact_constructions_kernel::P> P; \
     P Pf() const { return P(); }
 #endif
 

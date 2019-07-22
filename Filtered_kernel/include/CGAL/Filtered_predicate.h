@@ -111,7 +111,8 @@ Filtered_predicate<EP,AP,C2E,C2A,Protection>::
       catch (Uncertain_conversion_exception&) {}
     }
     CGAL_BRANCH_PROFILER_BRANCH(tmp);
-    Protect_FPU_rounding<!Protection> p(CGAL_FE_TONEAREST);
+    //FIXME hack
+    //Protect_FPU_rounding<!Protection> p(CGAL_FE_TONEAREST);
     return ep(c2e(args)...);
 }
 

@@ -70,8 +70,10 @@ compare_lexicographically_xyzC3(const FT &px, const FT &py, const FT &pz,
 {
   typedef typename Compare<FT>::result_type Cmp;
   Cmp c = CGAL_NTS compare(px, qx);
+  if (is_indeterminate(c)) return indeterminate<Cmp>();
   if (c != EQUAL) return c;
   c = CGAL_NTS compare(py, qy);
+  if (is_indeterminate(c)) return indeterminate<Cmp>();
   if (c != EQUAL) return c;
   return CGAL_NTS compare(pz, qz);
 }

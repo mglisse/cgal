@@ -91,6 +91,11 @@ struct Filtered_kernel_base
     typedef Filtered_predicate<typename Exact_kernel::P, typename Approximate_kernel::P, C2E, C2F> P; \
     P Pf() const { return P(); }
 
+    //FIXME hack for homogeneous that's wrong...
+#define CGAL_Kernel_pred_nop(P, Pf) \
+    typedef Filtered_predicate<typename Exact_kernel::P, typename Approximate_kernel::P, C2E, C2F, false> P; \
+    P Pf() const { return P(); }
+
 #define CGAL_Kernel_pred_RT(P, Pf) \
     typedef Filtered_predicate<typename Exact_kernel_rt::P, typename Approximate_kernel::P, C2E_rt, C2F> P; \
     P Pf() const { return P(); }
