@@ -539,6 +539,9 @@ private:
 #endif
       Internal_protector P;
 #ifdef CGAL_USE_SSE2
+      // FIXME: merge both calls to _mm_setcsr into a variant of the protectors
+      if(Protected)
+	_mm_setcsr(_mm_getcsr() & ~_MM_EXCEPT_MASK);
 # if 1
       // Brutal, compute all products in all directions.
       // The actual winner (by a hair) on recent hardware
@@ -558,7 +561,6 @@ private:
     __m128d y1 = _mm_max_pd(x1,x2);
     __m128d y2 = _mm_max_pd(x3,x4);
     __m128d r = _mm_max_pd (y1, y2);
-    return IA (IA_opacify128(r));
 # elif 0
     // we want to multiply ai,as with {ai<0?-bs:-bi,as<0?bi:bs}
     // we want to multiply as,ai with {as<0?-bs:-bi,ai<0?bi:bs}
@@ -578,7 +580,6 @@ private:
     __m128d p1 = _mm_mul_pd (az, x);
     __m128d p2 = _mm_mul_pd (azp, y);
     __m128d r = _mm_max_pd (p1, p2);
-    return IA (IA_opacify128(r));
 # elif 0
     // we want to multiply -ai,as with {ai>0?bi:bs,as<0?bi:bs}
     // we want to multiply -as,ai with {as<0?bs:bi,ai>0?bs:bi}
@@ -597,7 +598,6 @@ private:
     __m128d p1 = _mm_mul_pd (aa, x);
     __m128d p2 = _mm_mul_pd (ap, y);
     __m128d r = _mm_max_pd (p1, p2);
-    return IA (IA_opacify128(r));
 # else
     // AVX version of the brutal method, same running time or slower
     __m128d aa = IA_opacify128_weak(a.simd());            // {-ai,as}
@@ -617,8 +617,15 @@ private:
     __m128d z1 = _mm256_castpd256_pd128(Z);
     __m128d z2 = _mm256_extractf128_pd(Z,1);
     __m128d r = _mm_max_pd (z1, z2);
-    return IA (IA_opacify128(r));
 # endif
+    r = IA_opacify128(r);
+    // Sadly, 0*Inf is NaN, whatever the rounding mode. If any NaN appeared, give up. We could make the processor trap instead so we don't have to check, but signal handlers... We could also check at a higher level, at the end of the predicate for predicates that only evaluate a polynomial, but it would be problematic for more complicated predicates with conditions.
+    unsigned status=_mm_getcsr();
+    if(BOOST_UNLIKELY((status & _MM_EXCEPT_INVALID)!=0)) {
+	_mm_setcsr(status & ~_MM_EXCEPT_MASK);
+	return IA::largest();
+    }
+    return IA (r);
 #else
     if (a.inf() >= 0.0)					// a>=0
     {
@@ -730,6 +737,7 @@ private:
     return IA (IA_opacify128(r));
 # else
     // Similar to the multiplication, but slow, because divisions are slow
+    // Remember that we check FE_INVALID in multiplication; I don't know if that's also needed here, but in any case producing spurious Inf/Inf seems better avoided.
     // if b>0 we want [-max(-ai/bi,-ai/bs),max(as/bi,as/bs)] {-ai,as}/{bi,bs} {-ai,as}/{bs,bi}
     // if b<0 we want [-max(-as/bi,-as/bs),max(ai/bi,ai/bs)] {-as,ai}/{bi,bs} {-as,ai}/{bs,bi}
     __m128d m = _mm_set_sd(-0.);
