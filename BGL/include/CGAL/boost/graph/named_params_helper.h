@@ -6,7 +6,7 @@
 //
 // Distributed under the Boost Software License, Version 1.0. (See
 // accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt)
+// https://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 // Copyright (c) 2007-2015  GeometryFactory (France).  All rights reserved.
 //
@@ -19,18 +19,10 @@
 #ifndef CGAL_BOOST_GRAPH_NAMED_PARAMETERS_HELPERS_H
 #define CGAL_BOOST_GRAPH_NAMED_PARAMETERS_HELPERS_H
 
-#include <CGAL/boost/graph/named_function_params.h>
+#include <CGAL/boost/graph/Named_function_parameters.h>
 
 #include <CGAL/Kernel_traits.h>
 #include <CGAL/Origin.h>
-#include <CGAL/Default_diagonalize_traits.h>
-
-#if defined(CGAL_EIGEN3_ENABLED)
-#include <CGAL/Eigen_svd.h>
-#elif defined(CGAL_LAPACK_ENABLED)
-#include <CGAL/Lapack_svd.h>
-#endif
-
 
 #include <CGAL/property_map.h>
 #include <CGAL/boost/graph/properties.h>
@@ -38,9 +30,18 @@
 #include <boost/mpl/has_xxx.hpp>
 
 #include <boost/type_traits/is_same.hpp>
-#include <boost/version.hpp>
+
 
 namespace CGAL {
+
+  // forward declarations to avoid dependency to Solver_interface
+  template <typename FT, unsigned int dim>
+  class Default_diagonalize_traits;
+  class Eigen_svd;
+  class Lapack_svd;
+  //
+  
+  
   //helper classes
   template<typename PolygonMesh, typename PropertyTag>
   class property_map_selector
@@ -111,9 +112,6 @@ namespace CGAL {
     typedef typename boost::property_traits<PMap>::value_type type;
   };
 
-  namespace Polygon_mesh_processing
-  {
-
   template<typename PolygonMesh, typename NamedParameters>
   class GetVertexPointMap
   {
@@ -122,17 +120,19 @@ namespace CGAL {
     typedef typename property_map_selector<PolygonMesh, boost::vertex_point_t>::type
     DefaultVPMap;
   public:
-    typedef typename boost::lookup_named_param_def<
+    typedef typename internal_np::Lookup_named_param_def<
     internal_np::vertex_point_t,
     NamedParameters,
     DefaultVPMap
     > ::type  type;
-    typedef typename boost::lookup_named_param_def<
+    typedef typename internal_np::Lookup_named_param_def<
       internal_np::vertex_point_t,
       NamedParameters,
       DefaultVPMap_const
       > ::type  const_type;
   };
+
+  namespace Polygon_mesh_processing {
 
   template<typename PolygonMesh, typename NamedParameters>
   class GetK
@@ -144,22 +144,30 @@ namespace CGAL {
     typedef typename CGAL::Kernel_traits<Point>::Kernel Kernel;
   };
 
+  } // namespace Polygon_mesh_processing
+
   template<typename PolygonMesh,
-           typename NamedParametersGT = cgal_bgl_named_params<bool, internal_np::all_default_t>,
+           typename NamedParametersGT = Named_function_parameters<bool, internal_np::all_default_t>,
            typename NamedParametersVPM = NamedParametersGT >
   class GetGeomTraits
   {
     typedef typename CGAL::graph_has_property<PolygonMesh, boost::vertex_point_t>::type
       Has_internal_pmap;
+
+    typedef typename internal_np::Lookup_named_param_def <
+      internal_np::vertex_point_t,
+      NamedParametersVPM,
+      internal_np::Param_not_found
+    > ::type  NP_vpm;
+
     struct Fake_GT {};//to be used if there is no internal vertex_point_map in PolygonMesh
 
-    typedef typename boost::mpl::if_c< Has_internal_pmap::value
-                                     , typename GetK<PolygonMesh, NamedParametersVPM>::Kernel
-                                     , Fake_GT
-    >::type DefaultKernel;
+    typedef typename boost::mpl::if_c<Has_internal_pmap::value || !boost::is_same<internal_np::Param_not_found, NP_vpm>::value,
+                                     typename Polygon_mesh_processing::GetK<PolygonMesh, NamedParametersVPM>::Kernel,
+                                     Fake_GT>::type DefaultKernel;
 
   public:
-    typedef typename boost::lookup_named_param_def <
+    typedef typename internal_np::Lookup_named_param_def <
       internal_np::geom_traits_t,
       NamedParametersGT,
       DefaultKernel
@@ -172,12 +180,12 @@ namespace CGAL {
     typedef typename property_map_selector<PolygonMesh, boost::face_index_t>::type DefaultMap;
     typedef typename property_map_selector<PolygonMesh, boost::face_index_t>::const_type DefaultMap_const;
   public:
-    typedef typename boost::lookup_named_param_def <
+    typedef typename internal_np::Lookup_named_param_def <
     internal_np::face_index_t,
     NamedParameters,
     DefaultMap
     > ::type  type;
-    typedef typename boost::lookup_named_param_def <
+    typedef typename internal_np::Lookup_named_param_def <
       internal_np::face_index_t,
       NamedParameters,
       DefaultMap_const
@@ -191,7 +199,7 @@ namespace CGAL {
   {
     typedef typename property_map_selector<PolygonMesh, boost::vertex_index_t>::type DefaultMap;
   public:
-    typedef typename boost::lookup_named_param_def <
+    typedef typename internal_np::Lookup_named_param_def <
     internal_np::vertex_index_t,
     NamedParameters,
     DefaultMap
@@ -214,14 +222,12 @@ namespace CGAL {
 
   public:
     typedef DummyNormalPmap NoMap;
-    typedef typename boost::lookup_named_param_def <
+    typedef typename internal_np::Lookup_named_param_def <
       internal_np::face_normal_t,
       NamedParameters,
       DummyNormalPmap//default
       > ::type  type;
   };
-
-  } // namespace Polygon_mesh_processing
 
   namespace Point_set_processing_3
   {
@@ -241,7 +247,7 @@ namespace CGAL {
     namespace parameters
     {
       template <typename PointRange>
-      cgal_bgl_named_params<bool, internal_np::all_default_t>
+      Named_function_parameters<bool, internal_np::all_default_t>
       inline all_default(const PointRange&)
       {
         return CGAL::parameters::all_default();
@@ -260,13 +266,13 @@ namespace CGAL {
       typedef typename CGAL::Identity_property_map<Point> DefaultPMap;
 
     public:
-      typedef typename boost::lookup_named_param_def<
+      typedef typename internal_np::Lookup_named_param_def<
       internal_np::point_t,
       NamedParameters,
       DefaultPMap
       > ::type  type;
 
-      typedef typename boost::lookup_named_param_def<
+      typedef typename internal_np::Lookup_named_param_def<
       internal_np::point_t,
       NamedParameters,
       DefaultPMap
@@ -301,13 +307,13 @@ namespace CGAL {
       typedef typename CGAL::Identity_property_map<Point> DefaultPMap;
 
     public:
-      typedef typename boost::lookup_named_param_def<
+      typedef typename internal_np::Lookup_named_param_def<
       internal_np::query_point_t,
       NamedParameters,
       DefaultPMap
       > ::type  type;
 
-      typedef typename boost::lookup_named_param_def<
+      typedef typename internal_np::Lookup_named_param_def<
       internal_np::query_point_t,
       NamedParameters,
       DefaultPMap
@@ -317,11 +323,17 @@ namespace CGAL {
     template<typename PointRange, typename NamedParameters>
     class GetK
     {
-      typedef typename boost::property_traits<
-        typename GetPointMap<PointRange, NamedParameters>::type
-        >::value_type Point;
+      typedef typename GetPointMap<PointRange, NamedParameters>::type Vpm;
+      typedef typename Kernel_traits<
+        typename boost::property_traits<Vpm>::value_type
+      >::Kernel Default_kernel;
+
     public:
-      typedef typename CGAL::Kernel_traits<Point>::Kernel Kernel;
+      typedef typename internal_np::Lookup_named_param_def <
+        internal_np::geom_traits_t,
+        NamedParameters,
+        Default_kernel
+      > ::type  Kernel;
     };
 
     template<typename PointRange, typename NamedParameters>
@@ -341,7 +353,7 @@ namespace CGAL {
 
     public:
       typedef DummyNormalMap NoMap;
-      typedef typename boost::lookup_named_param_def <
+      typedef typename internal_np::Lookup_named_param_def <
         internal_np::normal_t,
         NamedParameters,
         DummyNormalMap//default
@@ -355,13 +367,13 @@ namespace CGAL {
       typedef typename CGAL::Identity_property_map<Plane> DefaultPMap;
 
     public:
-      typedef typename boost::lookup_named_param_def<
+      typedef typename internal_np::Lookup_named_param_def<
       internal_np::plane_t,
       NamedParameters,
       DefaultPMap
       > ::type  type;
 
-      typedef typename boost::lookup_named_param_def<
+      typedef typename internal_np::Lookup_named_param_def<
       internal_np::plane_t,
       NamedParameters,
       DefaultPMap
@@ -384,10 +396,33 @@ namespace CGAL {
 
     public:
       typedef DummyPlaneIndexMap NoMap;
-      typedef typename boost::lookup_named_param_def <
+      typedef typename internal_np::Lookup_named_param_def <
         internal_np::plane_index_t,
         NamedParameters,
         DummyPlaneIndexMap//default
+        > ::type  type;
+    };
+
+    template<typename PointRange, typename NamedParameters>
+    class GetIsConstrainedMap
+    {
+      struct DummyConstrainedMap
+      {
+        typedef typename std::iterator_traits<typename PointRange::iterator>::value_type key_type;
+        typedef bool value_type;
+        typedef value_type reference;
+        typedef boost::readable_property_map_tag category;
+
+        typedef DummyConstrainedMap Self;
+        friend reference get(const Self&, const key_type&) { return false; }
+      };
+
+    public:
+      typedef DummyConstrainedMap NoMap;
+      typedef typename internal_np::Lookup_named_param_def <
+        internal_np::point_is_constrained_t,
+        NamedParameters,
+        DummyConstrainedMap //default
         > ::type  type;
     };
 
@@ -397,7 +432,7 @@ namespace CGAL {
   class GetSolver
   {
   public:
-    typedef typename boost::lookup_named_param_def <
+    typedef typename internal_np::Lookup_named_param_def <
     internal_np::sparse_linear_solver_t,
     NamedParameters,
     DefaultSolver
@@ -408,7 +443,7 @@ namespace CGAL {
   class GetDiagonalizeTraits
   {
   public:
-    typedef typename boost::lookup_named_param_def <
+    typedef typename internal_np::Lookup_named_param_def <
     internal_np::diagonalize_traits_t,
     NamedParameters,
     Default_diagonalize_traits<FT, dim>
@@ -429,7 +464,7 @@ namespace CGAL {
   public:
     typedef DummySvdTraits NoTraits;
     
-    typedef typename boost::lookup_named_param_def <
+    typedef typename internal_np::Lookup_named_param_def <
     internal_np::svd_traits_t,
     NamedParameters,
 #if defined(CGAL_EIGEN3_ENABLED)

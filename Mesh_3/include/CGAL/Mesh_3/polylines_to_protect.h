@@ -2,19 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Laurent Rineau
@@ -35,15 +26,14 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <CGAL/Labeled_mesh_domain_3.h> // for CGAL::Null_subdomain_index
 #include <boost/utility.hpp> // for boost::prior
-#include <boost/foreach.hpp>
 #include <boost/optional.hpp>
 
 #include <CGAL/Search_traits_3.h>
 #include <CGAL/Orthogonal_incremental_neighbor_search.h>
 
 namespace CGAL {
-
-namespace internal { namespace Mesh_3 {
+namespace Mesh_3 {
+namespace internal {
 
 template <typename K, typename NT>
 struct Returns_midpoint {
@@ -186,7 +176,14 @@ private:
                     Vector vy)
   {
 #ifdef CGAL_MESH_3_DEBUG_POLYLINES_TO_PROTECT
-    std::cerr << "New curve:\n";
+    std::cerr << "New curve:\n"
+              << "  base("
+              << p00 << " , "
+              << p00+vx << " , "
+              << p00+vy << ")\n"
+              << "  vectors: "
+              << "( " << vx << " ) "
+              << " ( " << vy << " )\n";
 #endif // CGAL_MESH_3_DEBUG_POLYLINES_TO_PROTECT
     const double step = (end - start)/prec;
     const double stop = end-step/2;
@@ -199,16 +196,18 @@ private:
     {
       const double y = (equation.*f)(x);
 #ifdef CGAL_MESH_3_DEBUG_POLYLINES_TO_PROTECT
-      std::cerr << "  (" << x << ", " << y << ")\n";
+      std::cerr << "  (" << x << ", " << y << ") -> ";
 #endif // CGAL_MESH_3_DEBUG_POLYLINES_TO_PROTECT
       const Point inter_p =
         translate(translate(p00,
                             scale(vx, x)),
                   scale(vy, y));
+#ifdef CGAL_MESH_3_DEBUG_POLYLINES_TO_PROTECT
+      std::cerr << "( " << inter_p << ")\n";
+#endif // CGAL_MESH_3_DEBUG_POLYLINES_TO_PROTECT
       v_int = g_manip.get_vertex(inter_p, false);
       g_manip.try_add_edge(old, v_int);
 
-#ifndef CGAL_CFG_NO_CPP0X_LAMBDAS
       CGAL_assertion_msg(max_squared_distance == 0 ||
                          CGAL::squared_distance(g_manip.g[old].point,
                                                 g_manip.g[v_int].point) <
@@ -220,19 +219,11 @@ private:
                            << this->g_manip.g[v_int].point << ")";
                          return s.str();
                        }().c_str()));
-#else // no C++ lamdbas
-      CGAL_assertion(max_squared_distance == 0 ||
-                     CGAL::squared_distance(g_manip.g[old].point,
-                                            g_manip.g[v_int].point) <
-                     max_squared_distance);
-#endif // no C++ lamdbas
-
       old = v_int;
     }
     if(null_vertex != v_int) {
       // v_int can be null if the curve is degenerated into one point.
       g_manip.try_add_edge(v_int, end_v);
-#ifndef CGAL_CFG_NO_CPP0X_LAMBDAS
       CGAL_assertion_msg(max_squared_distance == 0 ||
                          CGAL::squared_distance(g_manip.g[end_v].point,
                                                 g_manip.g[v_int].point) <
@@ -244,13 +235,6 @@ private:
                              << this->g_manip.g[v_int].point << ")";
                            return s.str();
                          }().c_str()));
-#else // no C++ lamdbas
-      CGAL_assertion(max_squared_distance == 0 ||
-                     CGAL::squared_distance(g_manip.g[end_v].point,
-                                            g_manip.g[v_int].point) <
-                     max_squared_distance);                   
-#endif // no C++ lamdbas
-
     }
   }
 };
@@ -266,9 +250,8 @@ struct Enriched_pixel {
   Image_word_type word;
   bool on_edge_of_the_cube;
 }; // end struct template Enriched_pixel<Pix,P,D,C>
-}} // namespaces: end Mesh_3, end internal
 
-namespace Mesh_3{
+} // end namespace internal
 
 template<typename P, typename G>
 struct Polyline_visitor
@@ -284,10 +267,10 @@ struct Polyline_visitor
 #if CGAL_MESH_3_PROTECTION_DEBUG > 1
     std::ofstream og("polylines_graph.polylines.txt");
     og.precision(17);
-    BOOST_FOREACH(const std::vector<P>& poly, polylines)
+    for(const std::vector<P>& poly : polylines)
     {
       og << poly.size() << " ";
-      BOOST_FOREACH(const P& p, poly)
+      for(const P& p : poly)
         og << p << " ";
       og << std::endl;
     }
@@ -385,8 +368,8 @@ void snap_graph_vertices(Graph& graph,
   }
   if(tree.size() == 0) return;
 
-  BOOST_FOREACH(typename boost::graph_traits<Graph>::vertex_descriptor v,
-                vertices(graph))
+  for(typename boost::graph_traits<Graph>::vertex_descriptor v :
+                make_range(vertices(graph)))
   {
     const typename K::Point_3 p = graph[v].point;
     NN_search nn(tree, p);
@@ -464,12 +447,13 @@ polylines_to_protect
 
   Graph graph;
 
-  using namespace CGAL::internal::Mesh_3;
+  using namespace CGAL::Mesh_3::internal;
 
-  typedef internal::Mesh_3::Graph_manipulations<Graph,
-                                                Point_3,
-                                                Image_word_type,
-                                                InterpolationFunctor> G_manip;
+  typedef Graph_manipulations<Graph,
+                              Point_3,
+                              Image_word_type,
+                              InterpolationFunctor> G_manip;
+
   G_manip g_manip(graph, interpolate);
 
   const float& tx = cgal_image.image()->tx;
@@ -508,9 +492,9 @@ polylines_to_protect
         for(int k = 0; k < zdim; k+= (axis == 2 ? (std::max)(1, zdim-1) : 1 ) )
         {
 
-          using CGAL::cpp11::array;
-          using CGAL::cpp11::tuple;
-          using CGAL::cpp11::get;
+          using std::array;
+          using std::tuple;
+          using std::get;
 
           typedef array<int, 3> Pixel;
 
@@ -533,11 +517,11 @@ polylines_to_protect
 #endif // CGAL_MESH_3_DEBUG_POLYLINES_TO_PROTECT
             continue;
           }
-          typedef internal::Mesh_3::Enriched_pixel<Pixel,
-                                                   Point_3,
-                                                   Domain_type,
-                                                   Image_word_type
-                                                   > Enriched_pixel;
+
+          typedef Enriched_pixel<Pixel,
+                                 Point_3,
+                                 Domain_type,
+                                 Image_word_type> Enriched_pixel;
 
           array<array<Enriched_pixel, 2>, 2> square =
             {{ {{ { pix00, Point_3(), Domain_type(), 0, false },
@@ -545,7 +529,7 @@ polylines_to_protect
                {{ { pix10, Point_3(), Domain_type(), 0, false },
                   { pix11, Point_3(), Domain_type(), 0, false } }} }};
 
-          std::map<Image_word_type, int> pixel_values_set;
+          std::map<Domain_type, int> pixel_values_set;
           for(int ii = 0; ii < 2; ++ii) {
             for(int jj = 0; jj < 2; ++jj) {
               const Pixel& pixel = square[ii][jj].pixel;
@@ -682,6 +666,7 @@ case_4:
               // Diagonal, but the wrong one.
               // Vertical swap
               std::swap(square[0][1], square[0][0]);
+              std::swap(square[1][1], square[1][0]);
             }
             if(square[0][1].domain == square[1][0].domain) {
               // diagonal case 1-2-1
@@ -902,7 +887,7 @@ case_1_2_1:
             }
             else {
               // case of two colors with one pixel green and three red
-              Image_word_type value_alone;
+              Domain_type value_alone;
               if(pixel_values_set.begin()->second == 1) {
                 value_alone = pixel_values_set.begin()->first;
               } else {
@@ -1018,8 +1003,8 @@ polylines_to_protect(std::vector<std::vector<P> >& polylines,
   typedef typename std::iterator_traits<PolylineInputIterator>::value_type Polyline;
 
   Graph graph;
-  typedef internal::Mesh_3::Returns_midpoint<K, int> Midpoint_fct;
-  internal::Mesh_3::Graph_manipulations<Graph,
+  typedef Mesh_3::internal::Returns_midpoint<K, int> Midpoint_fct;
+  Mesh_3::internal::Graph_manipulations<Graph,
                                         Point_3,
                                         int,
                                         Midpoint_fct> g_manip(graph);
@@ -1093,7 +1078,7 @@ polylines_to_protect(const CGAL::Image_3& cgal_image,
      word_type,
      null,
      CGAL::Identity<Image_word_type>(),
-     internal::Mesh_3::Returns_midpoint<K, Image_word_type>(),
+     Mesh_3::internal::Returns_midpoint<K, Image_word_type>(),
      existing_polylines_begin,
      existing_polylines_end);
 }

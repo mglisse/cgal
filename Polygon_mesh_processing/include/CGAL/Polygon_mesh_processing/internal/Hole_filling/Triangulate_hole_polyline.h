@@ -2,19 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 // 
 //
 // Author(s)     : Ilker O. Yaz
@@ -28,6 +19,7 @@
 #include <CGAL/value_type_traits.h>
 #ifndef CGAL_HOLE_FILLING_DO_NOT_USE_DT3
 #include <CGAL/Delaunay_triangulation_3.h>
+#include <CGAL/Delaunay_triangulation_cell_base_3.h>
 #include <CGAL/Triangulation_vertex_base_with_info_3.h>
 #endif
 #include <CGAL/utility.h>
@@ -41,7 +33,9 @@
 #include <map>
 
 #include <CGAL/boost/iterator/transform_iterator.hpp>
+#include <boost/next_prior.hpp>
 #include <boost/unordered_set.hpp>
+#include <boost/next_prior.hpp>
 
 namespace CGAL {
 namespace internal {
@@ -759,7 +753,8 @@ public:
   typedef std::vector<Point_3>                                Polyline_3;
 
   typedef Triangulation_vertex_base_with_info_3<int, Kernel>  VB_with_id;
-  typedef Triangulation_data_structure_3<VB_with_id>          TDS;
+  typedef Delaunay_triangulation_cell_base_3<Kernel>          CB;
+  typedef Triangulation_data_structure_3<VB_with_id, CB>      TDS;
   typedef Delaunay_triangulation_3<Kernel, TDS>               Triangulation;
 
   typedef typename Triangulation::Finite_edges_iterator       Finite_edges_iterator;
@@ -1104,9 +1099,10 @@ private:
     
     if(W.get(0, n-1) == Weight::NOT_VALID()) {
       #ifndef CGAL_TEST_SUITE
-      CGAL_warning(!"Returning no output. Filling hole with extra triangles is not successful!");
+      CGAL_warning(!"Returning no output using Delaunay triangulation.\n Falling back to the general Triangulation framework.");
       #else
-      std::cerr << "W: Returning no output. Filling hole with extra triangles is not successful!\n";
+      std::cerr << "W: Returning no output using Delaunay triangulation.\n"
+                << "Falling back to the general Triangulation framework.\n";
       #endif
       return Weight::NOT_VALID();
     }
@@ -1240,6 +1236,13 @@ triangulate_hole_polyline(const PointRange1& points,
     use_delaunay_triangulation ? Fill_DT().operator()(P,Q,tracer,WC) :
   #endif
     Fill().operator()(P,Q,tracer,WC);
+
+#ifndef CGAL_HOLE_FILLING_DO_NOT_USE_DT3
+  if (use_delaunay_triangulation
+      && w == WeightCalculator::Weight::NOT_VALID())
+    w = Fill().operator()(P, Q, tracer, WC);
+#endif
+
   #ifdef CGAL_PMP_HOLE_FILLING_DEBUG
   std::cerr << w << std::endl;
   #endif

@@ -2,19 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Stephane Tayeb
@@ -221,8 +212,8 @@ struct Tester
     typename C3t3::Triangulation::Vertex& tv1 = *v;
     typename C3t3::Triangulation::Vertex& tv2 = *vit;
     
-    assert(   ( v == vp1 && vit->point() == p1 )
-           || ( v == vp4 && vit->point() == p4 ) );
+    assert(   ( v == vp1 && tr.point(vit) == p1 )
+           || ( v == vp4 && tr.point(vit) == p4 ) );
     
     assert ( tv1.in_dimension() == tv2.in_dimension() );
     //-------------------------------------------------------
@@ -314,7 +305,9 @@ struct Tester
     // Test edge iterators
     //-------------------------------------------------------
     std::cout << "Test edge iterators\n";
-    const Edge& edge_to_modify = *(c3t3.edges_in_complex_begin());
+    typename C3t3::Edges_in_complex_iterator eit = c3t3.edges_in_complex_begin();
+    assert(eit != c3t3.edges_in_complex_end());
+    const Edge& edge_to_modify = *eit;
     c3t3.remove_from_complex(edge_to_modify);
     c3t3.add_to_complex(edge_to_modify,curve_index_bis);
     

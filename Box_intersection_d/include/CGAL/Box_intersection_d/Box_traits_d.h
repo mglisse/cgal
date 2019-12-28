@@ -2,19 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 // 
 //
 // Author(s)     : Lutz Kettner  <kettner@mpi-sb.mpg.de>
@@ -92,7 +83,7 @@ struct Predicate_traits_d : public BoxTraits {
 
     // compare dim a b = islolesslo a b dim
     class Compare : 
-        public CGAL::binary_function<Box_parameter,Box_parameter,bool>
+        public CGAL::cpp98::binary_function<Box_parameter,Box_parameter,bool>
     {
         int dim;
     public:
@@ -103,7 +94,7 @@ struct Predicate_traits_d : public BoxTraits {
     };
 
     // loless val dim box = getlo box dim < val
-    class Lo_less : public CGAL::unary_function<Box_parameter,bool> {
+    class Lo_less : public CGAL::cpp98::unary_function<Box_parameter,bool> {
         NT value;
         int dim;
     public:
@@ -113,7 +104,7 @@ struct Predicate_traits_d : public BoxTraits {
         }
     };
 
-    class Hi_greater : public CGAL::unary_function<Box_parameter,bool> {
+    class Hi_greater : public CGAL::cpp98::unary_function<Box_parameter,bool> {
         NT value;
         int dim;
     public:
@@ -124,7 +115,7 @@ struct Predicate_traits_d : public BoxTraits {
     };
 
     // spanning lo hi dim box = getlo box dim < lo && gethi box dim > hi
-    class Spanning : public CGAL::unary_function<Box_parameter,bool> {
+    class Spanning : public CGAL::cpp98::unary_function<Box_parameter,bool> {
         NT lo, hi;
         int dim;
     public:

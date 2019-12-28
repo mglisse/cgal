@@ -1,17 +1,11 @@
 // Copyright (c) 2006-2008  Max-Planck-Institute Saarbruecken (Germany)
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0+
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Michael Hemmer <hemmer@mpi-sb.mpg.de>
@@ -30,43 +24,43 @@
 namespace CGAL {
 
 template < class A, class B = A >
-struct Equal_to : public CGAL::binary_function< A, B, bool > {
+struct Equal_to : public CGAL::cpp98::binary_function< A, B, bool > {
   bool operator()( const A& x, const B& y) const
   { return x == y; }
 };
 
 template < class A, class B = A >
-struct Not_equal_to : public CGAL::binary_function< A, B, bool > {
+struct Not_equal_to : public CGAL::cpp98::binary_function< A, B, bool > {
   bool operator()( const A& x, const B& y) const
   { return x != y; }
 };
 
 template < class A, class B = A >
-struct Greater : public CGAL::binary_function< A, B, bool > {
+struct Greater : public CGAL::cpp98::binary_function< A, B, bool > {
   bool operator()( const A& x, const B& y) const
   { return x > y; }
 };
 
 template < class A, class B = A >
-struct Less : public CGAL::binary_function< A, B, bool > {
+struct Less : public CGAL::cpp98::binary_function< A, B, bool > {
   bool operator()( const A& x, const B& y) const
   { return x < y; }
 };
 
 template < class A, class B = A >
-struct Greater_equal : public CGAL::binary_function< A, B, bool > {
+struct Greater_equal : public CGAL::cpp98::binary_function< A, B, bool > {
   bool operator()( const A& x, const B& y) const
   { return x >= y; }
 };
 
 template < class A, class B = A >
-struct Less_equal : public CGAL::binary_function< A, B, bool > {
+struct Less_equal : public CGAL::cpp98::binary_function< A, B, bool > {
   bool operator()( const A& x, const B& y) const
   { return x <= y; }
 };
 
 template < class NT, class Less = std::less< NT > >
-struct Min :public CGAL::binary_function< NT, NT, NT > {
+struct Min :public CGAL::cpp98::binary_function< NT, NT, NT > {
  Min() {}
  Min(const Less& c_) : c(c_) {}
  NT operator()( const NT& x, const NT& y) const
@@ -76,7 +70,7 @@ protected:
 };
 
 template < class NT, class Less = std::less< NT > >
-struct Max :public CGAL::binary_function< NT, NT, NT > {
+struct Max :public CGAL::cpp98::binary_function< NT, NT, NT > {
  Max() {}
  Max(const Less& c_) : c(c_) {}
  NT operator()( const NT& x, const NT& y) const
@@ -201,7 +195,7 @@ inline void sse2minmax(double& a, double b, double& c)
 #endif // CGAL_USE_SSE2_MAX
 
 template <>
-struct Max<double> :public CGAL::binary_function< double, double, double > {
+struct Max<double> :public CGAL::cpp98::binary_function< double, double, double > {
  Max() {}
 
  double operator()( const double& x, const double& y) const
@@ -233,7 +227,7 @@ struct Max<double> :public CGAL::binary_function< double, double, double > {
 };
 
 template <>
-struct Min<double> :public CGAL::binary_function< double, double, double > {
+struct Min<double> :public CGAL::cpp98::binary_function< double, double, double > {
  Min() {}
 
  double operator()( const double& x, const double& y) const
@@ -265,7 +259,7 @@ struct Min<double> :public CGAL::binary_function< double, double, double > {
 };
 template< class T >
 class Is_valid
-  : public CGAL::unary_function< T, bool > {
+  : public CGAL::cpp98::unary_function< T, bool > {
   public:
     bool operator()( const T& ) const {
       return true;

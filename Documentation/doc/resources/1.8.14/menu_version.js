@@ -3,24 +3,27 @@
 
   var url_re =  /(cgal\.geometryfactory\.com\/CGAL\/doc\/|doc\.cgal\.org\/)(master|latest|(\d\.\d+|\d\.\d+\.\d+))\//;
   var url_local =  /.*\/doc_output\//;
+  var current_version_local = '5.0'
   var all_versions = [
-    'master',
-    'latest',
-    '4.12',
-    '4.11.1',
-    '4.10.2',
-    '4.9.1',
-    '4.8.2',
-    '4.7',
-    '4.6.3',
-    '4.5.2',
-    '4.4',
-    '4.3'
+      'master',
+      'latest',
+      '5.0',
+      '4.14.2',
+      '4.13.2',
+      '4.12.2',
+      '4.11.3',
+      '4.10.2',
+      '4.9.1',
+      '4.8.2',
+      '4.7',
+      '4.6.3',
+      '4.5.2',
+      '4.4',
+      '4.3'
   ];
 
   function build_select(current_version) {
     var buf = ['<select>'];
-
     $.each(all_versions, function(id) {
       var version = all_versions[id];
       buf.push('<option value="' + version + '"');
@@ -31,7 +34,11 @@
       }
       buf.push('</option>');
     });
-
+    if ( !all_versions.includes(current_version)) {
+       buf.push('<option value="' + current_version + '"');
+       buf.push(' selected="selected">' + current_version);
+       buf.push('</option>');
+    }
     buf.push('</select>');
     return buf.join('');
   }
@@ -76,7 +83,7 @@
       else {
         match = url_local.exec(window.location.href);
         if (match) {
-          var version = '4.11';
+          var version = current_version_local;
           var select = build_select(version);
           spanNode.innerHTML=select;
           $('.version_menu select').bind('change', on_switch);

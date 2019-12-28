@@ -2,19 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Sebastien Loriot
@@ -30,6 +21,7 @@
 #include <CGAL/Kernel_traits.h>
 
 namespace CGAL {
+namespace Polygon_mesh_processing {
 namespace Corefinement {
 
 // A class responsible for storing the intersection nodes of the intersection
@@ -167,7 +159,7 @@ private:
   Exact_kernel        ek;
   Exact_kernel::Intersect_3 exact_intersection;
   std::vector<vertex_descriptor> tm1_vertices, tm2_vertices;
-
+  const bool doing_autorefinement;
 public:
   const TriangleMesh &tm1, &tm2;
   VertexPointMap vpm1, vpm2;
@@ -176,7 +168,8 @@ public:
                      const TriangleMesh& tm2_,
                      const VertexPointMap& vpm1_,
                      const VertexPointMap& vpm2_)
-  : tm1(tm1_)
+  : doing_autorefinement(&tm1_ == &tm2_)
+  , tm1(tm1_)
   , tm2(tm2_)
   , vpm1(vpm1_)
   , vpm2(vpm2_)
@@ -260,7 +253,7 @@ public:
     CGAL_assertion(inter_res != boost::none);
     const Exact_kernel::Point_3* pt =
       boost::get<Exact_kernel::Point_3>(&(*inter_res));
-    CGAL_assertion(pt!=NULL);
+    CGAL_assertion(pt!=nullptr);
     add_new_node(*pt);
   }
 
@@ -284,7 +277,15 @@ public:
   {
     put(vpm, vd, exact_to_double(enodes[i]));
     if (&tm1==&tm)
-      tm1_vertices[i] = vd;
+    {
+      if (  tm1_vertices[i] == GT::null_vertex() )
+      {
+        tm1_vertices[i] = vd;
+        return;
+      }
+      if (doing_autorefinement)
+        tm2_vertices[i] = vd;
+    }
     else
       tm2_vertices[i] = vd;
   }
@@ -369,7 +370,7 @@ public:
     CGAL_assertion(inter_res != boost::none);
     const Point_3* pt =
       boost::get<Point_3>(&(*inter_res));
-    CGAL_assertion(pt!=NULL);
+    CGAL_assertion(pt!=nullptr);
     add_new_node(*pt);
   }
 
@@ -418,6 +419,6 @@ public:
 }; // end specialization
 
 
-} } // end of namespace CGAL::Corefinement
+} } } // CGAL::Polygon_mesh_processing::Corefinement
 
 #endif // CGAL_POLYGON_MESH_PROCESSING_INTERNAL_COREFINEMENT_INTERSECTION_NODES_H

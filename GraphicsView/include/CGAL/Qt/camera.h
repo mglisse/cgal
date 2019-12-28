@@ -3,24 +3,12 @@
  Copyright (c) 2018  GeometryFactory Sarl (France).
  Copyright (C) 2002-2014 Gilles Debunne. All rights reserved.
 
- This file is part of the CGAL::QGLViewer library version 2.7.0.
-
- http://www.libqglviewer.com - contact@libqglviewer.com
-
- This file may be used under the terms of the GNU General Public License 
- version 3.0 as published by the Free Software Foundation and
- appearing in the LICENSE file included in the packaging of this file.
-
- libCGAL::QGLViewer uses dual licensing. Commercial/proprietary software must
- purchase a libCGAL::QGLViewer Commercial License.
-
- This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
- WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ This file is part of a fork of the QGLViewer library version 2.7.0.
 
 *****************************************************************************/
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0
+// SPDX-License-Identifier: GPL-3.0-only
 
 
 #ifndef QGLVIEWER_CAMERA_H
@@ -93,9 +81,7 @@ class ManipulatedCameraFrame;
   unprojectedCoordinatesOf() will convert from screen to 3D coordinates.
   convertClickToLine() is very useful for analytical object selection.
 
-  Stereo display is possible on machines with quad buffer capabilities (with
-  Camera::PERSPECTIVE type() only). Test the <a
-  href="../examples/stereoViewer.html">stereoViewer example</a> to check.
+
 
   A Camera can also be used outside of a CGAL::QGLViewer or even without OpenGL for
   its coordinate system conversion capabilities. Note however that some of them
@@ -236,7 +222,7 @@ public:
 
   The near (resp. far) clipping plane is positioned at a distance equal to
   zClippingCoefficient() * sceneRadius() in front of (resp. behind) the
-  sceneCenter(). This garantees an optimal use of the z-buffer range and
+  sceneCenter(). This guarantees an optimal use of the z-buffer range and
   minimizes aliasing. See the zNear() and zFar() documentations.
 
   Default value is square root of 3.0 (so that a cube of size sceneRadius() is
@@ -304,6 +290,16 @@ public Q_SLOTS:
   void setZClippingCoefficient(qreal coef) {
     zClippingCoef_ = coef;
     projectionMatrixIsUpToDate_ = false;
+  }
+  /*! Sets the zNear value in orthographic mode. */
+  void setOrthoZNear(qreal z)
+  {
+    m_zMin = z;
+  }
+  /*! Returns the zNear value in orthographic mode*/
+  qreal orthoZNear()
+  {
+    return m_zMin;
   }
   //@}
 
@@ -399,10 +395,6 @@ public:
   //! to the current type (PERSPECTIVE or ORTHOGRAPHIC) in this order : 
   //! left, right, top, bottom, near, far
   void getFrustum(double frustum[6]);
-
-  virtual void loadProjectionMatrixStereo(bool leftBuffer = true) const;
-  virtual void loadModelViewMatrixStereo(bool leftBuffer = true) const;
-
   void getProjectionMatrix(GLfloat m[16]) const;
   void getProjectionMatrix(GLdouble m[16]) const;
 
@@ -425,12 +417,12 @@ public:
   /*! @name 2D screen to 3D world coordinate systems conversions */
   //@{
 public:
-  Vec projectedCoordinatesOf(const Vec &src, const Frame *frame = NULL) const;
-  Vec unprojectedCoordinatesOf(const Vec &src, const Frame *frame = NULL) const;
+  Vec projectedCoordinatesOf(const Vec &src, const Frame *frame = nullptr) const;
+  Vec unprojectedCoordinatesOf(const Vec &src, const Frame *frame = nullptr) const;
   void getProjectedCoordinatesOf(const qreal src[3], qreal res[3],
-                                 const Frame *frame = NULL) const;
+                                 const Frame *frame = nullptr) const;
   void getUnprojectedCoordinatesOf(const qreal src[3], qreal res[3],
-                                   const Frame *frame = NULL) const;
+                                   const Frame *frame = nullptr) const;
   void convertClickToLine(const QPoint &pixel, Vec &orig, Vec &dir) const;
   Vec pointUnderPixel(const QPoint &pixel, bool &found) const;
   //@}
@@ -441,60 +433,6 @@ public:
   qreal flySpeed() const;
 public Q_SLOTS:
   void setFlySpeed(qreal speed);
-  //@}
-
-  /*! @name Stereo parameters */
-  //@{
-public:
-  /*! Returns the user's inter-ocular distance (in meters). Default value is
-  0.062m, which fits most people.
-
-  loadProjectionMatrixStereo() uses this value to define the Camera offset and
-  frustum. See setIODistance(). */
-  qreal IODistance() const { return IODistance_; }
-
-  /*! Returns the physical distance between the user's eyes and the screen (in
-  meters).
-
-  physicalDistanceToScreen() and focusDistance() represent the same distance.
-  The former is expressed in physical real world units, while the latter is
-  expressed in OpenGL virtual world units.
-
-  This is a helper function. It simply returns physicalScreenWidth() / 2.0 /
-  tan(horizontalFieldOfView() / 2.0); */
-  qreal physicalDistanceToScreen() const;
-
-  /*! Returns the physical screen width, in meters. Default value is 0.5m
-  (average monitor width).
-
-  Used for stereo display only (see loadModelViewMatrixStereo() and
-  loadProjectionMatrixStereo()). Set using setPhysicalScreenWidth(). */
-  qreal physicalScreenWidth() const { return physicalScreenWidth_; }
-
-  /*! Returns the focus distance used by stereo display, expressed in OpenGL
-  units.
-
-  This is the distance in the virtual world between the Camera and the plane
-  where the horizontal stereo parallax is null (the stereo left and right
-  cameras' lines of sigth cross at this distance).
-
-  This distance is the virtual world equivalent of the real-world
-  physicalDistanceToScreen().
-
-  \attention This value is modified by CGAL::QGLViewer::setSceneRadius(),
-  setSceneRadius() and setFieldOfView(). When one of these values is modified,
-  focusDistance() is set to sceneRadius() / tan(fieldOfView()/2), which provides
-  good results. */
-  qreal focusDistance() const { return focusDistance_; }
-public Q_SLOTS:
-  /*! Sets the IODistance(). */
-  void setIODistance(qreal distance) { IODistance_ = distance; }
-
-  /*! Sets the physical screen (monitor or projected wall) width (in meters). */
-  void setPhysicalScreenWidth(qreal width) { physicalScreenWidth_ = width; }
-
-  /*! Sets the focusDistance(), in OpenGL scene units. */
-  void setFocusDistance(qreal distance) { focusDistance_ = distance; }
   //@}
 
   /*! @name XML representation */
@@ -527,6 +465,7 @@ private:
   mutable bool modelViewMatrixIsUpToDate_;
   mutable GLdouble projectionMatrix_[16]; // Buffered projection matrix.
   mutable bool projectionMatrixIsUpToDate_;
+  qreal m_zMin; //USed for near plane in orthographic projection.
 
   // S t e r e o   p a r a m e t e r s
   qreal IODistance_;          // inter-ocular distance, in meters

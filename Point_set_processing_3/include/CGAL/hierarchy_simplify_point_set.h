@@ -2,19 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s) : Simon Giraudot, Pierre Alliez
 
@@ -39,8 +30,9 @@
 #include <CGAL/PCA_util.h>
 #include <CGAL/squared_distance_3.h>
 #include <CGAL/Iterator_range.h>
+#include <functional>
 
-#include <CGAL/boost/graph/named_function_params.h>
+#include <CGAL/boost/graph/Named_function_parameters.h>
 #include <CGAL/boost/graph/named_params_helper.h>
 
 namespace CGAL {
@@ -114,7 +106,7 @@ namespace CGAL {
   /// \endcond
 
   /**
-     \ingroup PkgPointSetProcessingAlgorithms
+     \ingroup PkgPointSetProcessing3Algorithms
   
      Recursively split the point set in smaller clusters until the
      clusters have less than `size` elements or until their variation
@@ -142,6 +134,13 @@ namespace CGAL {
        if Eigen 3 (or greater) is available and `CGAL_EIGEN3_ENABLED` is defined then an overload
        using `Eigen_diagonalize_traits` is provided. Otherwise, the internal implementation
        `CGAL::Diagonalize_traits` is used.\cgalParamEnd
+       \cgalParamBegin{callback} an instance of
+       `std::function<bool(double)>`. It is called regularly when the
+       algorithm is running: the current advancement (between 0. and
+       1.) is passed as parameter. If it returns `true`, then the
+       algorithm continues its execution normally; if it returns
+       `false`, the algorithm is stopped and simplification stops with
+       no guarantee on the output.\cgalParamEnd
        \cgalParamBegin{geom_traits} an instance of a geometric traits class, model of `Kernel`\cgalParamEnd
      \cgalNamedParamsEnd
 
@@ -153,7 +152,8 @@ namespace CGAL {
   hierarchy_simplify_point_set (PointRange& points,
                                 const NamedParameters& np)
   {
-    using boost::choose_param;
+    using parameters::choose_parameter;
+    using parameters::get_parameter;
   
     // basic geometric types
     typedef typename Point_set_processing_3::GetPointMap<PointRange, NamedParameters>::type PointMap;
@@ -164,9 +164,11 @@ namespace CGAL {
     typedef typename Kernel::Vector_3 Vector;
     typedef typename Kernel::FT FT;
 
-    PointMap point_map = choose_param(get_param(np, internal_np::point_map), PointMap());
-    unsigned int size = choose_param(get_param(np, internal_np::size), 10);
-    double var_max = choose_param(get_param(np, internal_np::maximum_variation), 1./3.);
+    PointMap point_map = choose_parameter(get_parameter(np, internal_np::point_map), PointMap());
+    unsigned int size = choose_parameter(get_parameter(np, internal_np::size), 10);
+    double var_max = choose_parameter(get_parameter(np, internal_np::maximum_variation), 1./3.);
+    const std::function<bool(double)>& callback = choose_parameter(get_parameter(np, internal_np::callback),
+                                                                   std::function<bool(double)>());
 
     typedef typename std::iterator_traits<typename PointRange::iterator>::value_type Input_type;
 
@@ -191,6 +193,8 @@ namespace CGAL {
 
     std::list<Input_type> points_to_keep;
     std::list<Input_type> points_to_remove;
+
+    std::size_t nb_done = 0;
     
     while (!(clusters_stack.empty ()))
       {
@@ -203,11 +207,12 @@ namespace CGAL {
 	    points_to_keep.splice (points_to_keep.end (), current_cluster->first,
 				   current_cluster->first.begin ());
 	    clusters_stack.pop_front ();
+            ++ nb_done;
 	    continue;
 	  }
 
 	// Compute the covariance matrix of the set
-	cpp11::array<FT, 6> covariance = {{ 0., 0., 0., 0., 0., 0. }};
+	std::array<FT, 6> covariance = {{ 0., 0., 0., 0., 0., 0. }};
 
 	for (typename std::list<Input_type>::iterator it = current_cluster->first.begin ();
 	     it != current_cluster->first.end (); ++ it)
@@ -222,8 +227,8 @@ namespace CGAL {
 	    covariance[5] += d.z () * d.z ();
 	  }
 
-	cpp11::array<FT, 3> eigenvalues = {{ 0., 0., 0. }};
-	cpp11::array<FT, 9> eigenvectors = {{ 0., 0., 0.,
+	std::array<FT, 3> eigenvalues = {{ 0., 0., 0. }};
+	std::array<FT, 9> eigenvectors = {{ 0., 0., 0.,
 					      0., 0., 0.,
 					      0., 0., 0. }};
 	// Linear algebra = get eigenvalues and eigenvectors for
@@ -268,6 +273,7 @@ namespace CGAL {
 		cluster_iterator nonempty = (current_cluster->first.empty ()
 					     ? negative_side : current_cluster);
 
+                nb_done += nonempty->first.size();
 		// Compute the centroid
 		nonempty->second = internal::hsps_centroid (nonempty->first.begin (),
 							    nonempty->first.end (),
@@ -279,6 +285,7 @@ namespace CGAL {
 						 point_map,
 						 nonempty->second,
 						 Kernel ());
+                
 		clusters_stack.pop_front ();
 		clusters_stack.pop_front ();
 	      }
@@ -311,6 +318,7 @@ namespace CGAL {
 	// and output point
 	else
 	  {
+            nb_done += current_cluster->first.size();
 	    internal::hsc_terminate_cluster (current_cluster->first,
 					     points_to_keep,
 					     points_to_remove,
@@ -319,7 +327,14 @@ namespace CGAL {
 					     Kernel ());
 	    clusters_stack.pop_front ();
 	  }
+
+        if (callback && !callback (nb_done / double (points.size())))
+          break;
       }
+
+    if (callback)
+      callback (1.);
+    
     typename PointRange::iterator first_point_to_remove =
       std::copy (points_to_keep.begin(), points_to_keep.end(), points.begin());
     std::copy (points_to_remove.begin(), points_to_remove.end(), first_point_to_remove);
@@ -338,86 +353,6 @@ namespace CGAL {
     return hierarchy_simplify_point_set
       (points, CGAL::Point_set_processing_3::parameters::all_default(points));
   }
-
-#ifndef CGAL_NO_DEPRECATED_CODE
-  // deprecated API
-  template <typename ForwardIterator,
-	    typename PointMap,
-	    typename DiagonalizeTraits,
-	    typename Kernel>
-  CGAL_DEPRECATED_MSG("you are using the deprecated V1 API of CGAL::hierarchy_simplify_point_set(), please update your code")
-  ForwardIterator hierarchy_simplify_point_set (ForwardIterator begin,
-						ForwardIterator end,
-						PointMap point_map,
-						const unsigned int size,
-						const double var_max,
-						const DiagonalizeTraits&,
-						const Kernel&)
-  {
-    CGAL::Iterator_range<ForwardIterator> points (begin, end);
-    return hierarchy_simplify_point_set
-      (points,
-       CGAL::parameters::point_map (point_map).
-       size (size).
-       maximum_variation (var_max).
-       diagonalize_traits (DiagonalizeTraits()).
-       geom_traits(Kernel()));
-  }
-
-  // deprecated API
-  template <typename ForwardIterator,
-	    typename PointMap,
-	    typename DiagonalizeTraits>
-  CGAL_DEPRECATED_MSG("you are using the deprecated V1 API of CGAL::hierarchy_simplify_point_set(), please update your code")
-  ForwardIterator hierarchy_simplify_point_set (ForwardIterator begin,
-						ForwardIterator end,
-						PointMap point_map,
-						const unsigned int size,
-						const double var_max,
-						const DiagonalizeTraits& diagonalize_traits)
-  {
-    CGAL::Iterator_range<ForwardIterator> points (begin, end);
-    return hierarchy_simplify_point_set
-      (points,
-       CGAL::parameters::point_map (point_map).
-       size (size).
-       maximum_variation (var_max).
-       diagonalize_traits (diagonalize_traits));
-  }
-
-  // deprecated API
-  template <typename ForwardIterator,
-	    typename PointMap >
-  CGAL_DEPRECATED_MSG("you are using the deprecated V1 API of CGAL::hierarchy_simplify_point_set(), please update your code")
-  ForwardIterator hierarchy_simplify_point_set (ForwardIterator begin,
-						ForwardIterator end,
-						PointMap point_map,
-						const unsigned int size,
-						const double var_max)
-  {
-    CGAL::Iterator_range<ForwardIterator> points (begin, end);
-    return hierarchy_simplify_point_set
-      (points,
-       CGAL::parameters::point_map (point_map).
-       size (size).
-       maximum_variation (var_max));
-  }
-  
-  // deprecated API
-  template <typename ForwardIterator >
-  CGAL_DEPRECATED_MSG("you are using the deprecated V1 API of CGAL::hierarchy_simplify_point_set(), please update your code")
-  ForwardIterator hierarchy_simplify_point_set (ForwardIterator begin,
-						ForwardIterator end,
-						const unsigned int size = 10,
-						const double var_max = 0.333)
-  {
-    CGAL::Iterator_range<ForwardIterator> points (begin, end);
-    return hierarchy_simplify_point_set
-      (points,
-       CGAL::parameters::size (size).
-       maximum_variation (var_max));
-  }
-#endif // CGAL_NO_DEPRECATED_CODE
   /// \endcond  
 
 } // namespace CGAL

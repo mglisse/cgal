@@ -1,19 +1,10 @@
 // Copyright (c) 2008 Max-Planck-Institute Saarbruecken (Germany)
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0+
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Arno Eigenwillig <arno@mpi-inf.mpg.de>
@@ -88,7 +79,7 @@ class Polynomial_algebraic_structure_traits_base< POLY,
     typedef Integral_domain_without_division_tag Algebraic_category;
     
     class Simplify 
-      : public CGAL::unary_function< POLY&, void > {
+      : public CGAL::cpp98::unary_function< POLY&, void > {
       public:
         void operator()( POLY& p ) const {
           p.simplify_coefficients();
@@ -96,7 +87,7 @@ class Polynomial_algebraic_structure_traits_base< POLY,
     };
     
     class Unit_part 
-      : public CGAL::unary_function< POLY, POLY > {
+      : public CGAL::cpp98::unary_function< POLY, POLY > {
       public:
         POLY operator()( const POLY& x ) const {
           return POLY( x.unit_part() );
@@ -104,7 +95,7 @@ class Polynomial_algebraic_structure_traits_base< POLY,
     };
   
   class Is_zero
-    : public CGAL::unary_function< POLY, bool > {
+    : public CGAL::cpp98::unary_function< POLY, bool > {
   public:
     bool operator()( const POLY& x ) const {
       return x.is_zero();
@@ -122,7 +113,7 @@ class Polynomial_algebraic_structure_traits_base< POLY, Integral_domain_tag >
     typedef Integral_domain_tag Algebraic_category;
     
     class Integral_division 
-      : public CGAL::binary_function< POLY, POLY, POLY > {
+      : public CGAL::cpp98::binary_function< POLY, POLY, POLY > {
       public:
         POLY operator()( const POLY& x, const POLY& y ) const {
           return x / y;
@@ -136,7 +127,7 @@ private:
   typedef typename Divides_coeff::result_type BOOL;
 public:
   class Divides 
-    : public CGAL::binary_function<POLY,POLY,BOOL>{  
+    : public CGAL::cpp98::binary_function<POLY,POLY,BOOL>{  
   public:
      BOOL operator()( const POLY& p1, const POLY& p2) const {
        POLY q; 
@@ -210,7 +201,7 @@ class Polynomial_algebraic_structure_traits_base< POLY, Unique_factorization_dom
     typedef Unique_factorization_domain_tag Algebraic_category;
     
   class Gcd 
-    : public CGAL::binary_function< POLY, POLY, POLY > {
+    : public CGAL::cpp98::binary_function< POLY, POLY, POLY > {
     typedef typename Polynomial_traits_d<POLY>::Multivariate_content Mcontent;
     typedef typename Mcontent::result_type ICoeff; 
     
@@ -293,7 +284,7 @@ class Polynomial_algebraic_structure_traits_base< POLY, Field_tag >
     };
     
     class Div 
-      : public CGAL::binary_function< POLY, POLY, POLY > {
+      : public CGAL::cpp98::binary_function< POLY, POLY, POLY > {
       public:
         POLY operator()(const POLY& a, const POLY& b) const {
           POLY q, r;
@@ -305,7 +296,7 @@ class Polynomial_algebraic_structure_traits_base< POLY, Field_tag >
     };
     
     class Mod 
-      : public CGAL::binary_function< POLY, POLY, POLY > {
+      : public CGAL::cpp98::binary_function< POLY, POLY, POLY > {
       public:
         POLY operator () (const POLY& a, const POLY& b) const {
           POLY q, r;

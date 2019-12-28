@@ -1,19 +1,11 @@
 // Copyright (c) 2011 CNRS and LIRIS' Establishments (France).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Guillaume Damiand <guillaume.damiand@liris.cnrs.fr>
 
@@ -97,24 +89,24 @@ const char fragment_source_mono[] =
     "varying highp vec4 fP; \n"
     "varying highp vec3 fN; \n"
     "uniform highp vec4 color; \n"
-    "uniform vec4 light_pos;  \n"
-    "uniform vec4 light_diff; \n"
-    "uniform vec4 light_spec; \n"
-    "uniform vec4 light_amb;  \n"
+    "uniform highp vec4 light_pos;  \n"
+    "uniform highp vec4 light_diff; \n"
+    "uniform highp vec4 light_spec; \n"
+    "uniform highp vec4 light_amb;  \n"
     "uniform float spec_power ; \n"
     
     "void main(void) { \n"
     
-    "   vec3 L = light_pos.xyz - fP.xyz; \n"
-    "   vec3 V = -fP.xyz; \n"
+    "   highp vec3 L = light_pos.xyz - fP.xyz; \n"
+    "   highp vec3 V = -fP.xyz; \n"
     
-    "   vec3 N = normalize(fN); \n"
+    "   highp vec3 N = normalize(fN); \n"
     "   L = normalize(L); \n"
     "   V = normalize(V); \n"
     
-    "   vec3 R = reflect(-L, N); \n"
-    "   vec4 diffuse = max(dot(N,L), 0.0) * light_diff * color; \n"
-    "   vec4 specular = pow(max(dot(R,V), 0.0), spec_power) * light_spec; \n"
+    "   highp vec3 R = reflect(-L, N); \n"
+    "   highp vec4 diffuse = max(dot(N,L), 0.0) * light_diff * color; \n"
+    "   highp vec4 specular = pow(max(dot(R,V), 0.0), spec_power) * light_spec; \n"
     
     "gl_FragColor = light_amb*color + diffuse  ; \n"
     "} \n"
@@ -127,24 +119,24 @@ const char fragment_source_color[] =
     "varying highp vec4 fP; \n"
     "varying highp vec3 fN; \n"
     "varying highp vec4 fColor; \n"
-    "uniform vec4 light_pos;  \n"
-    "uniform vec4 light_diff; \n"
-    "uniform vec4 light_spec; \n"
-    "uniform vec4 light_amb;  \n"
+    "uniform highp vec4 light_pos;  \n"
+    "uniform highp vec4 light_diff; \n"
+    "uniform highp vec4 light_spec; \n"
+    "uniform highp vec4 light_amb;  \n"
     "uniform float spec_power ; \n"
     
     "void main(void) { \n"
     
-    "   vec3 L = light_pos.xyz - fP.xyz; \n"
-    "   vec3 V = -fP.xyz; \n"
+    "   highp vec3 L = light_pos.xyz - fP.xyz; \n"
+    "   highp vec3 V = -fP.xyz; \n"
     
-    "   vec3 N = normalize(fN); \n"
+    "   highp vec3 N = normalize(fN); \n"
     "   L = normalize(L); \n"
     "   V = normalize(V); \n"
     
-    "   vec3 R = reflect(-L, N); \n"
-    "   vec4 diffuse = max(dot(N,L), 0.0) * light_diff * fColor; \n"
-    "   vec4 specular = pow(max(dot(R,V), 0.0), spec_power) * light_spec; \n"
+    "   highp vec3 R = reflect(-L, N); \n"
+    "   highp vec4 diffuse = max(dot(N,L), 0.0) * light_diff * fColor; \n"
+    "   highp vec4 specular = pow(max(dot(R,V), 0.0), spec_power) * light_spec; \n"
     
     "gl_FragColor = light_amb*fColor + diffuse  ; \n"
     "} \n"
@@ -223,7 +215,6 @@ class Basic_viewer : public CGAL::QGLViewer, public QOpenGLFunctions_2_1
 
   typedef CGAL::Constrained_triangulation_face_base_2<P_traits, Fb1>    Fb;
   typedef CGAL::Triangulation_data_structure_2<Vb,Fb>                   TDS;
-  // typedef CGAL::No_intersection_tag                                     Itag;
   typedef CGAL::Exact_predicates_tag                                    Itag;
   typedef CGAL::Constrained_Delaunay_triangulation_2<P_traits, TDS,
                                                      Itag>              CDT;
@@ -861,36 +852,6 @@ protected:
 
     QColor color;
 
-    /*    if(m_draw_vertices)
-    {
-      ::glPointSize(m_size_points);
-      vao[3].bind();
-      attrib_buffers(this);
-      color.setRgbF((double)m_vertices_mono_color.red()/(double)255,
-                    (double)m_vertices_mono_color.green()/(double)255,
-                    (double)m_vertices_mono_color.blue()/(double)255);
-      rendering_program_p_l.bind();
-      rendering_program_p_l.setAttributeValue(colorLocation,color);
-      //      glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(pos_points.size()/3));
-      rendering_program_p_l.release();
-      vao[3].release();
-    }
-
-    if(m_draw_edges)
-    {
-      vao[2].bind();
-      attrib_buffers(this);
-      color.setRgbF((double)m_edges_mono_color.red()/(double)255,
-                    (double)m_edges_mono_color.green()/(double)255,
-                    (double)m_edges_mono_color.blue()/(double)255);
-      rendering_program_p_l.bind();
-      rendering_program_p_l.setAttributeValue(colorLocation,color);
-      ::glLineWidth(m_size_edges);
-      //      glDrawArrays(GL_LINES, 0, static_cast<GLsizei>(pos_segments.size()/3));
-      rendering_program_p_l.release();
-      vao[2].release();
-      }*/
-
     if (m_draw_faces)
     {
       vao[0].bind();
@@ -945,14 +906,9 @@ protected:
 
     // Light default parameters
     ::glLineWidth(m_size_edges);
-    ::glPointSize(m_size_points);
     ::glEnable(GL_POLYGON_OFFSET_FILL);
     ::glPolygonOffset(1.f,1.f);
     ::glClearColor(1.0f,1.0f,1.0f,0.0f);
-    ::glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
-    ::glEnable(GL_LIGHTING);
-    ::glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
-    ::glShadeModel(GL_FLAT);
     ::glDisable(GL_BLEND);
     ::glEnable(GL_LINE_SMOOTH);
     ::glDisable(GL_POLYGON_SMOOTH_HINT);

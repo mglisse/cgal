@@ -3,24 +3,12 @@
  Copyright (c) 2018  GeometryFactory Sarl (France).
  Copyright (C) 2002-2014 Gilles Debunne. All rights reserved.
 
- This file is part of a fork of the CGAL::QGLViewer library version 2.7.0.
-
- http://www.libqglviewer.com - contact@libqglviewer.com
-
- This file may be used under the terms of the GNU General Public License 
- version 3.0 as published by the Free Software Foundation and
- appearing in the LICENSE file included in the packaging of this file.
-
- libCGAL::QGLViewer uses dual licensing. Commercial/proprietary software must
- purchase a libCGAL::QGLViewer Commercial License.
-
- This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
- WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ This file is part of a fork of the QGLViewer library version 2.7.0.
 
 *****************************************************************************/
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0
+// SPDX-License-Identifier: GPL-3.0-only
 
 #ifdef CGAL_HEADER_ONLY
 #define CGAL_INLINE_FUNCTION inline
@@ -40,8 +28,9 @@
 
 #include <QMouseEvent>
 
-using namespace CGAL::qglviewer;
-using namespace std;
+namespace CGAL{
+namespace qglviewer{
+
 
 /*! Default constructor.
 
@@ -62,7 +51,7 @@ ManipulatedFrame::ManipulatedFrame()
   setZoomSensitivity(1.0);
 
   isSpinning_ = false;
-  previousConstraint_ = NULL;
+  previousConstraint_ = nullptr;
 
   connect(&spinningTimer_, SIGNAL(timeout()), SLOT(spinUpdate()));
 }
@@ -157,7 +146,7 @@ restored and are left unchanged.
 See Vec::initFromDOMElement() for a complete code example. */
 CGAL_INLINE_FUNCTION
 void ManipulatedFrame::initFromDOMElement(const QDomElement &element) {
-  // Not called since it would set constraint() and referenceFrame() to NULL.
+  // Not called since it would set constraint() and referenceFrame() to nullptr.
   // *this = ManipulatedFrame();
   Frame::initFromDOMElement(element);
 
@@ -233,10 +222,10 @@ void ManipulatedFrame::startAction(int ma, bool withConstraint) {
   // manipulatedCameraFrame::wheelEvent and mouseReleaseEvent() restore previous
   // constraint
   if (withConstraint)
-    previousConstraint_ = NULL;
+    previousConstraint_ = nullptr;
   else {
     previousConstraint_ = constraint();
-    setConstraint(NULL);
+    setConstraint(nullptr);
   }
 
   switch (action_) {
@@ -592,3 +581,4 @@ ManipulatedFrame::deformedBallQuaternion(int x, int y, qreal cx, qreal cy,
   return Quaternion(axis, angle);
 }
 #endif // DOXYGEN
+}}

@@ -3,19 +3,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Laurent Rineau, Stéphane Tayeb
@@ -30,16 +21,22 @@
 
 #include <CGAL/license/Mesh_3.h>
 
+#include <CGAL/disable_warnings.h>
+
+#include <CGAL/enum.h>
+#include <CGAL/Kernel/global_functions.h>
+#include <CGAL/property_map.h>
+
+#include <boost/graph/graph_traits.hpp>
+
 #include <iostream>
 #include <fstream>
-#include <boost/foreach.hpp>
-#include <CGAL/disable_warnings.h>
 
 namespace CGAL {
 
 /// @cond DEVELOPERS
-namespace internal {
 namespace Mesh_3 {
+namespace internal {
 
 template <typename Graph>
 void dump_graph_edges(std::ostream& out, const Graph& g)
@@ -48,7 +45,7 @@ void dump_graph_edges(std::ostream& out, const Graph& g)
   typedef typename boost::graph_traits<Graph>::edge_descriptor edge_descriptor;
 
   out.precision(17);
-  BOOST_FOREACH(edge_descriptor e, edges(g))
+  for(edge_descriptor e : edges(g))
   {
     vertex_descriptor s = source(e, g);
     vertex_descriptor t = target(e, g);
@@ -181,11 +178,11 @@ struct Extract_polyline_with_context_visitor
 };
 
 
-} // end CGAL::internal::Mesh_3
-} // end CGAL::internal
+} // end CGAL::Mesh_3::internal
+} // end CGAL::Mesh_3
 
 /// @endcond
-  
+
 } // end CGAL
 
 #include <CGAL/enable_warnings.h>

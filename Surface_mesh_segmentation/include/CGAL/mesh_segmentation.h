@@ -3,19 +3,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Ilker O. Yaz
 
@@ -69,7 +60,7 @@ sdf_values( const TriangleMesh& triangle_mesh,
 /// @endcond
 
 /*!
- * \ingroup PkgSurfaceSegmentation
+ * \ingroup PkgSurfaceMeshSegmentationRef
  * @brief Function computing the Shape Diameter Function over a surface mesh.
  *
  * This function implements the Shape Diameter Function (SDF) as described in \cgalCite{shapira2008consistent}.
@@ -117,7 +108,7 @@ sdf_values( const TriangleMesh& triangle_mesh,
 
 
 /*!
- * \ingroup PkgSurfaceSegmentation
+ * \ingroup PkgSurfaceMeshSegmentationRef
  * @brief Function post-processing raw SDF values computed per facet.
  *
  * Post-processing steps applied :
@@ -152,7 +143,7 @@ sdf_values_postprocessing(const TriangleMesh& triangle_mesh,
 
 
 /*!
- * \ingroup PkgSurfaceSegmentation
+ * \ingroup PkgSurfaceMeshSegmentationRef
  * @brief Function computing the segmentation of a surface mesh given an SDF value per facet.
  *
  * This function fills a property map which associates a segment-id (in [0, number of segments -1])
@@ -252,7 +243,7 @@ segmentation_via_sdf_values(const TriangleMesh& triangle_mesh,
 
 
 /*!
- * \ingroup PkgSurfaceSegmentation
+ * \ingroup PkgSurfaceMeshSegmentationRef
  * @brief Function computing the segmentation of a surface mesh.
  *
  * This function is equivalent to calling the functions `CGAL::sdf_values()` and

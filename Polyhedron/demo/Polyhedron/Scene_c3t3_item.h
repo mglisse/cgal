@@ -19,7 +19,6 @@
 
 #include <CGAL/Three/Viewer_interface.h>
 #include <CGAL/Three/Scene_group_item.h>
-#include <Scene_polyhedron_item.h>
 #include <Scene_polygon_soup_item.h>
 #include <CGAL/IO/File_binary_mesh_3.h>
 #include <CGAL/Three/Scene_item_with_properties.h>
@@ -35,10 +34,11 @@ using namespace CGAL::Three;
 public:
   typedef CGAL::qglviewer::ManipulatedFrame ManipulatedFrame;
 
-  Scene_c3t3_item();
-  Scene_c3t3_item(const C3t3& c3t3);
+  Scene_c3t3_item(bool is_surface = false);
+  Scene_c3t3_item(const C3t3& c3t3, bool is_surface = false);
   ~Scene_c3t3_item();
 
+  void common_constructor(bool is_surface);
   bool has_stats()const  Q_DECL_OVERRIDE {return true;}
   QString computeStats(int type)  Q_DECL_OVERRIDE;
   CGAL::Three::Scene_item::Header_data header() const Q_DECL_OVERRIDE;
@@ -76,6 +76,9 @@ public:
   bool has_cnc() const;
   bool has_tets() const;
   bool is_valid() const;//true if the c3t3 is correct, false if it was made from a .mesh, for example
+  float alpha() const Q_DECL_OVERRIDE;
+  void setAlpha(int alpha) Q_DECL_OVERRIDE;
+  QSlider* alphaSlider();
   ManipulatedFrame* manipulatedFrame() Q_DECL_OVERRIDE;
 
   void setPosition(float x, float y, float z) ;
@@ -119,12 +122,13 @@ public:
   void drawEdges(CGAL::Three::Viewer_interface* viewer) const Q_DECL_OVERRIDE;
   void drawPoints(CGAL::Three::Viewer_interface * viewer) const Q_DECL_OVERRIDE;
    //When selecting a c3t3 item, we don't want to select its children, so we can still apply Operations to it
-  QList<Scene_item*> getChildrenForSelection() const Q_DECL_OVERRIDE { return QList<Scene_item*>(); }
+  QList<Scene_interface::Item_id> getChildrenForSelection() const Q_DECL_OVERRIDE { return QList<Scene_interface::Item_id>(); }
   public:
     QMenu* contextMenu() Q_DECL_OVERRIDE;
     void copyProperties(Scene_item *) Q_DECL_OVERRIDE;
     float getShrinkFactor() const;
     bool keyPressEvent(QKeyEvent *) Q_DECL_OVERRIDE;
+    bool eventFilter(QObject *, QEvent *) Q_DECL_OVERRIDE;
   public Q_SLOTS:
 
   void on_spheres_color_changed();
@@ -154,9 +158,24 @@ public:
 
   void itemAboutToBeDestroyed(Scene_item *) Q_DECL_OVERRIDE;
 
+  void initializeBuffers(Viewer_interface *) const Q_DECL_OVERRIDE;
+  void computeElements() const Q_DECL_OVERRIDE;
+  void newViewer(Viewer_interface *viewer) Q_DECL_OVERRIDE;
+  
   protected:
     friend struct Scene_c3t3_item_priv;
     Scene_c3t3_item_priv* d;
+    enum Face_Containers{
+      C3t3_faces = 0
+    };
+    enum Edge_Containers{
+      C3t3_edges = 0,
+      Grid_edges,
+      CNC
+    };
+    enum Point_Container{
+      C3t3_points = 0
+    };
 
 };
 

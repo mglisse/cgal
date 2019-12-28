@@ -3,6 +3,7 @@
 #include "Messages_interface.h"
 #include <CGAL/Three/Polyhedron_demo_plugin_helper.h>
 #include <CGAL/Three/Polyhedron_demo_plugin_interface.h>
+#include <CGAL/Three/Three.h>
 
 #include <CGAL/compute_average_spacing.h>
 #include <CGAL/edge_aware_upsample_point_set.h>
@@ -66,6 +67,10 @@ public:
   Point_set_demo_point_set_upsampling_dialog(QWidget * /*parent*/ = 0)
   {
     setupUi(this);
+    m_edgeSensitivity->setMaximum(1.0);
+    m_neighborhoodRadius->setRange(0.1, 10.0);
+
+
   }
 
   unsigned int sharpness_angle () const { return m_sharpnessAngle->value(); }
@@ -86,7 +91,7 @@ void Polyhedron_demo_point_set_upsampling_plugin::on_actionEdgeAwareUpsampling_t
     {
       if (!(item->has_normals ()))
 	{
-          message_interface->error("Error: upsampling algorithm requires point set with normals.");
+          CGAL::Three::Three::error("Error: upsampling algorithm requires point set with normals.");
 	  return;
 	}
       

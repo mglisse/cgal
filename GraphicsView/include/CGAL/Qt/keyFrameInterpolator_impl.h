@@ -3,24 +3,12 @@
  Copyright (c) 2018  GeometryFactory Sarl (France).
  Copyright (C) 2002-2014 Gilles Debunne. All rights reserved.
 
- This file is part of a fork of the CGAL::QGLViewer library version 2.7.0.
-
- http://www.libqglviewer.com - contact@libqglviewer.com
-
- This file may be used under the terms of the GNU General Public License 
- version 3.0 as published by the Free Software Foundation and
- appearing in the LICENSE file included in the packaging of this file.
-
- libCGAL::QGLViewer uses dual licensing. Commercial/proprietary software must
- purchase a libCGAL::QGLViewer Commercial License.
-
- This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
- WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ This file is part of a fork of the QGLViewer library version 2.7.0.
 
 *****************************************************************************/
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0
+// SPDX-License-Identifier: GPL-3.0-only
 #ifdef CGAL_HEADER_ONLY
 #define CGAL_INLINE_FUNCTION inline
 
@@ -33,8 +21,9 @@
 #include <CGAL/Qt/keyFrameInterpolator.h>
 #include <CGAL/Qt/domUtils.h>
 
-using namespace CGAL::qglviewer;
-using namespace std;
+namespace CGAL{
+namespace qglviewer{
+
 
 /*! Creates a KeyFrameInterpolator, with \p frame as associated frame().
 
@@ -44,7 +33,7 @@ using namespace std;
   their default values. */
 CGAL_INLINE_FUNCTION
 KeyFrameInterpolator::KeyFrameInterpolator(Frame *frame)
-    : frame_(NULL), period_(40), interpolationTime_(0.0),
+    : frame_(nullptr), period_(40), interpolationTime_(0.0),
       interpolationSpeed_(1.0), interpolationStarted_(false),
       closedPath_(false), loopInterpolation_(false), pathIsValid_(false),
       valuesAreValid_(true), currentFrameValid_(false)
@@ -184,7 +173,7 @@ void KeyFrameInterpolator::resetInterpolation() {
   edited, even during the interpolation. See the <a
   href="../examples/keyFrames.html">keyFrames example</a> for an illustration.
 
-  \c NULL \p frame pointers are silently ignored. The keyFrameTime() has to be
+  \c nullptr \p frame pointers are silently ignored. The keyFrameTime() has to be
   monotonously increasing over keyFrames.
 
   Use addKeyFrame(const Frame&, qreal) to add keyFrame by values. */
@@ -293,7 +282,7 @@ void KeyFrameInterpolator::updateModifiedFrameValues() {
   kf = keyFrame_.first();
   int index = 1;
   while (kf) {
-    KeyFrame *next = (index < keyFrame_.size()) ? keyFrame_.at(index) : NULL;
+    KeyFrame *next = (index < keyFrame_.size()) ? keyFrame_.at(index) : nullptr;
     index++;
     if (next)
       kf->computeTangent(prev, next);
@@ -541,7 +530,7 @@ void KeyFrameInterpolator::initFromDOMElement(const QDomElement &element) {
   setClosedPath(DomUtils::boolFromDom(element, "closedPath", false));
   setLoopInterpolation(DomUtils::boolFromDom(element, "loop", false));
 
-  // setFrame(NULL);
+  // setFrame(nullptr);
   pathIsValid_ = false;
   valuesAreValid_ = false;
   currentFrameValid_ = false;
@@ -554,7 +543,7 @@ void KeyFrameInterpolator::initFromDOMElement(const QDomElement &element) {
 //////////// KeyFrame private class implementation /////////
 CGAL_INLINE_FUNCTION
 KeyFrameInterpolator::KeyFrame::KeyFrame(const Frame &fr, qreal t)
-    : time_(t), frame_(NULL) {
+    : time_(t), frame_(nullptr) {
   p_ = fr.position();
   q_ = fr.orientation();
 }
@@ -584,5 +573,6 @@ void KeyFrameInterpolator::KeyFrame::flipOrientationIfNeeded(
   if (Quaternion::dot(prev, q_) < 0.0)
     q_.negate();
 }
-
 #endif // DOXYGEN
+
+}}

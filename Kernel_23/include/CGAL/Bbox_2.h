@@ -5,20 +5,11 @@
 // Max-Planck-Institute Saarbruecken (Germany),
 // and Tel-Aviv University (Israel).  All rights reserved. 
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0+
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Andreas Fabri
 
@@ -39,7 +30,7 @@ struct Simple_cartesian;
 
 class Bbox_2
 {
-  typedef cpp11::array<double, 4>            BBox_rep_2;
+  typedef std::array<double, 4>            BBox_rep_2;
 
   BBox_rep_2 rep;
 
@@ -163,10 +154,10 @@ void
 Bbox_2::dilate(int dist)
 {
   using boost::math::float_advance;
-  float_advance(rep[0],-dist);
-  float_advance(rep[1],-dist);
-  float_advance(rep[2],dist);
-  float_advance(rep[3],dist);
+  rep[0] = float_advance(rep[0],-dist);
+  rep[1] = float_advance(rep[1],-dist);
+  rep[2] = float_advance(rep[2],dist);
+  rep[3] = float_advance(rep[3],dist);
 }
   
 inline

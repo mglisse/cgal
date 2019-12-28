@@ -613,7 +613,6 @@ void Scene::draw(CGAL::QGLViewer* viewer)
     }
     if(m_view_points && pos_points.size()>0)
     {
-        gl->glPointSize(2.0f);
         vao[0].bind();
         attrib_buffers(viewer);
         rendering_program.bind();
@@ -807,7 +806,6 @@ void Scene::build_facet_tree()
     timer.start();
     std::cout << "Construct Facet AABB tree...";
     m_facet_tree.rebuild(faces(*m_pPolyhedron).first, faces(*m_pPolyhedron).second,*m_pPolyhedron);
-    m_facet_tree.accelerate_distance_queries();
     std::cout << "done (" << timer.time() << " s)" << std::endl;
 }
 
@@ -827,7 +825,6 @@ void Scene::build_edge_tree()
     timer.start();
     std::cout << "Construct Edge AABB tree...";
     m_edge_tree.rebuild(edges(*m_pPolyhedron).first,edges(*m_pPolyhedron).second,*m_pPolyhedron);
-    m_edge_tree.accelerate_distance_queries();
     std::cout << "done (" << timer.time() << " s)" << std::endl;
 }
 
@@ -1298,7 +1295,7 @@ void Scene::refine_loop()
         return;
     }
     std::cout << "Loop subdivision...";
-    CGAL::Subdivision_method_3::Loop_subdivision(*m_pPolyhedron, 1);
+    CGAL::Subdivision_method_3::Loop_subdivision(*m_pPolyhedron);
     std::cout << "done (" << m_pPolyhedron->size_of_facets() << " facets)" << std::endl;
 
     clear_internal_data();

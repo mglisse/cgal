@@ -3,19 +3,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Pierre Alliez, Laurent Rineau, Ilker O. Yaz
@@ -38,7 +29,6 @@
 
 #include <vector>
 #include <exception>
-#include <boost/foreach.hpp>
 #include <boost/range.hpp>
 
 #include <boost/function_output_iterator.hpp>
@@ -235,7 +225,7 @@ self_intersections( const FaceRange& face_range,
 /**
  * \ingroup PMP_intersection_grp
  * detects and records self-intersections of a triangulated surface mesh.
- * This function depends on the package \ref PkgBoxIntersectionDSummary
+ * This function depends on the package \ref PkgBoxIntersectionD
  * @pre `CGAL::is_triangle_mesh(tmesh)`
  *
  * @tparam TriangleMesh a model of `FaceListGraph`
@@ -253,7 +243,7 @@ self_intersections( const FaceRange& face_range,
  * \cgalNamedParamsBegin
  *    \cgalParamBegin{vertex_point_map} the property map with the points associated to the vertices of `pmesh`.
  *   If this parameter is omitted, an internal property map for
- *   `CGAL::vertex_point_t` should be available in `TriangleMesh`\cgalParamEnd
+ *   `CGAL::vertex_point_t` must be available in `TriangleMesh`\cgalParamEnd
  *    \cgalParamBegin{geom_traits} an instance of a geometric traits class, model of `PMPSelfIntersectionTraits` \cgalParamEnd
  * \cgalNamedParamsEnd
  *
@@ -273,7 +263,7 @@ self_intersections(const TriangleMesh& tmesh
 #ifdef DOXYGEN_RUNNING
                  , const NamedParameters& np)
 #else
-                 , const cgal_bgl_named_params<P,T,R>& np)
+                 , const Named_function_parameters<P,T,R>& np)
 #endif
 {
   return self_intersections(faces(tmesh), tmesh, out, np);
@@ -312,7 +302,7 @@ self_intersections(const TriangleMesh& tmesh, OutputIterator out)
  * \cgalNamedParamsBegin
  *    \cgalParamBegin{vertex_point_map} the property map with the points associated to the vertices of `pmesh`.
  *   If this parameter is omitted, an internal property map for
- *   `CGAL::vertex_point_t` should be available in `TriangleMesh`\cgalParamEnd
+ *   `CGAL::vertex_point_t` must be available in `TriangleMesh`\cgalParamEnd
  *    \cgalParamBegin{geom_traits} an instance of a geometric traits class, model of `PMPSelfIntersectionTraits` \cgalParamEnd
  * \cgalNamedParamsEnd
 
@@ -341,10 +331,10 @@ self_intersections( const FaceRange& face_range,
   );
 
   typedef typename GetVertexPointMap<TM, NamedParameters>::const_type VertexPointMap;
-  VertexPointMap vpmap = boost::choose_param(get_param(np, internal_np::vertex_point),
-                                             get_const_property_map(boost::vertex_point, tmesh));
+  VertexPointMap vpmap = parameters::choose_parameter(parameters::get_parameter(np, internal_np::vertex_point),
+                                                      get_const_property_map(boost::vertex_point, tmesh));
 
-  BOOST_FOREACH(face_descriptor f, face_range)
+  for(face_descriptor f : face_range)
   {
     typename boost::property_traits<VertexPointMap>::reference
       p = get(vpmap, target(halfedge(f,tmesh),tmesh)),
@@ -360,14 +350,14 @@ self_intersections( const FaceRange& face_range,
   std::vector<const Box*> box_ptr;
   box_ptr.reserve(num_faces(tmesh));
 
-  BOOST_FOREACH(Box& b, boxes)
+  for(Box& b : boxes)
     box_ptr.push_back(&b);
 
   // compute self-intersections filtered out by boxes
   typedef typename GetGeomTraits<TM, NamedParameters>::type GeomTraits;
   CGAL::internal::Intersect_facets<TM,GeomTraits,Box,OutputIterator,VertexPointMap>
     intersect_facets(tmesh, out, vpmap,
-      boost::choose_param(get_param(np, internal_np::geom_traits), GeomTraits()));
+      parameters::choose_parameter(parameters::get_parameter(np, internal_np::geom_traits), GeomTraits()));
 
   std::ptrdiff_t cutoff = 2000;
   CGAL::box_self_intersection_d(box_ptr.begin(), box_ptr.end(),intersect_facets,cutoff);
@@ -391,7 +381,7 @@ OutputIterator self_intersections(const FaceRange& face_range,
 /**
  * \ingroup PMP_intersection_grp
  * tests if a triangulated surface mesh self-intersects.
- * This function depends on the package \ref PkgBoxIntersectionDSummary
+ * This function depends on the package \ref PkgBoxIntersectionD
  * @pre `CGAL::is_triangle_mesh(tmesh)`
  *
  * @tparam TriangleMesh a model of `FaceListGraph`
@@ -403,7 +393,7 @@ OutputIterator self_intersections(const FaceRange& face_range,
  * \cgalNamedParamsBegin
  *    \cgalParamBegin{vertex_point_map} the property map with the points associated to the vertices of `tmesh`.
  *   If this parameter is omitted, an internal property map for
- *   `CGAL::vertex_point_t` should be available in `TriangleMesh`\cgalParamEnd
+ *   `CGAL::vertex_point_t` must be available in `TriangleMesh`\cgalParamEnd
  *    \cgalParamBegin{geom_traits} an instance of a geometric traits class, model of `PMPSelfIntersectionTraits` \cgalParamEnd
  * \cgalNamedParamsEnd
  *
@@ -431,7 +421,7 @@ bool does_self_intersect(const TriangleMesh& tmesh
 /**
  * \ingroup PMP_intersection_grp
  * tests if a set of faces of a triangulated surface mesh self-intersects.
- * This function depends on the package \ref PkgBoxIntersectionDSummary
+ * This function depends on the package \ref PkgBoxIntersectionD
  * @pre `CGAL::is_triangle_mesh(tmesh)`
  *
  * @tparam FaceRange a range of `face_descriptor`
@@ -445,11 +435,11 @@ bool does_self_intersect(const TriangleMesh& tmesh
  * \cgalNamedParamsBegin
  *    \cgalParamBegin{vertex_point_map} the property map with the points associated to the vertices of `tmesh`.
  *   If this parameter is omitted, an internal property map for
- *   `CGAL::vertex_point_t` should be available in `TriangleMesh`\cgalParamEnd
+ *   `CGAL::vertex_point_t` must be available in `TriangleMesh`\cgalParamEnd
  *    \cgalParamBegin{geom_traits} an instance of a geometric traits class, model of `SelfIntersectionTraits` \cgalParamEnd
  * \cgalNamedParamsEnd
  *
- * @return true if the faces in `face_range` self-intersects
+ * @return true if the faces in `face_range` self-intersect
  */
 template <class FaceRange,
           class TriangleMesh,

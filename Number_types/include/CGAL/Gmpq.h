@@ -1,20 +1,11 @@
 // Copyright (c) 2006-2008 Max-Planck-Institute Saarbruecken (Germany).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0+
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Michael Hemmer   <hemmer@mpi-inf.mpg.de>
@@ -36,7 +27,7 @@ template <> class Algebraic_structure_traits< Gmpq >
     typedef Tag_false            Is_numerical_sensitive;
 
     class Is_square
-      : public CGAL::binary_function< Type, Type&,
+      : public CGAL::cpp98::binary_function< Type, Type&,
                                 bool > {
       public:
         bool operator()( const Type& x_, Type& y ) const {
@@ -54,7 +45,7 @@ template <> class Algebraic_structure_traits< Gmpq >
     };
 
     class Simplify
-      : public CGAL::unary_function< Type&, void > {
+      : public CGAL::cpp98::unary_function< Type&, void > {
       public:
         void operator()( Type& x) const {
           mpq_canonicalize( x.mpq() );
@@ -70,7 +61,7 @@ template <> class Real_embeddable_traits< Gmpq >
   public:
   
     class Sgn
-      : public CGAL::unary_function< Type, ::CGAL::Sign > {
+      : public CGAL::cpp98::unary_function< Type, ::CGAL::Sign > {
       public:
         ::CGAL::Sign operator()( const Type& x ) const {
           return x.sign();
@@ -78,7 +69,7 @@ template <> class Real_embeddable_traits< Gmpq >
     };
 
     class To_double
-      : public CGAL::unary_function< Type, double > {
+      : public CGAL::cpp98::unary_function< Type, double > {
       public:
         double operator()( const Type& x ) const {
           return x.to_double();
@@ -86,7 +77,7 @@ template <> class Real_embeddable_traits< Gmpq >
     };
 
     class To_interval
-      : public CGAL::unary_function< Type, std::pair< double, double > > {
+      : public CGAL::cpp98::unary_function< Type, std::pair< double, double > > {
       public:
         std::pair<double, double> operator()( const Type& x ) const {
 #if MPFR_VERSION_MAJOR >= 3

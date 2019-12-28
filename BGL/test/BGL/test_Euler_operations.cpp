@@ -152,7 +152,7 @@ add_vertex_and_face_to_border_test()
   assert(dist == 2);
 
   int blength = 0;
-  BOOST_FOREACH(halfedge_descriptor hd, CGAL::halfedges_around_face(h1,m)){
+  for(halfedge_descriptor hd : CGAL::halfedges_around_face(h1,m)){
     CGAL_USE(hd);
     blength++;
   }
@@ -163,7 +163,7 @@ add_vertex_and_face_to_border_test()
   assert(! CGAL::is_border(res,m));
   assert(CGAL::is_border(opposite(res,m),m));
   res = opposite(res,m);
-  BOOST_FOREACH(halfedge_descriptor hd, CGAL::halfedges_around_face(res,m)){
+  for(halfedge_descriptor hd : CGAL::halfedges_around_face(res,m)){
     CGAL_USE(hd);
     blength--;
   }
@@ -380,7 +380,27 @@ does_satisfy_link_condition()
   assert(CGAL::Euler::does_satisfy_link_condition(*edges(f.m).first,f.m));
 }
 
-
+template <typename Graph>
+void
+test_swap_edges()
+{
+  typedef typename boost::graph_traits<Graph>::halfedge_descriptor halfedge_descriptor;
+  std::size_t nbh=12;
+  Kernel::Point_3 pt(0,0,0);
+  // test all possible pairs of halfedges
+  for (std::size_t i=0; i<nbh-1; ++i)
+  {
+    for(std::size_t j=i+1; j<nbh; ++j)
+    {
+      Graph g;
+      CGAL::make_tetrahedron(pt,pt,pt,pt,g);
+      halfedge_descriptor h1 = *std::next(boost::begin(halfedges(g)), i);
+      halfedge_descriptor h2 = *std::next(boost::begin(halfedges(g)), j);
+      CGAL::internal::swap_edges(h1, h2, g);
+      CGAL_assertion(CGAL::is_valid_polygon_mesh(g));
+    }
+  }
+}
 
 template <typename Graph>
 void
@@ -400,6 +420,7 @@ test_Euler_operations()
   remove_center_vertex_test<Graph>();
   join_split_inverse<Graph>();
   does_satisfy_link_condition<Graph>();
+  test_swap_edges<Graph>();
 }
 
 int main()

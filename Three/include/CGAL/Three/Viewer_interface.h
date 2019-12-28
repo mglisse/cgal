@@ -2,19 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Laurent RINEAU, Maxime Gimeno
@@ -28,8 +19,8 @@
 #include <CGAL/Qt/qglviewer.h>
 #include <QWidget>
 #include <QPoint>
-#include <QOpenGLFunctions_2_1>
-#include <QOpenGLFunctions_4_3_Compatibility>
+#include <QOpenGLFunctions>
+#include <QOpenGLFunctions_4_3_Core>
 #include <CGAL/Qt/CreateOpenGLContext.h>
 // forward declarations
 class QWidget;
@@ -37,6 +28,7 @@ class QImage;
 class QMouseEvent;
 class QKeyEvent;
 class QOpenGLShaderProgram;
+class QOpenGLFramebufferObject;
 class TextRenderer;
 class TextListItem;
 
@@ -73,8 +65,12 @@ public:
    PROGRAM_C3T3_EDGES,          //! Used to render the edges of a c3t3_item. It discards any fragment on a side of a plane, meaning that nothing is displayed on this side of the plane. Not affected by light.
    PROGRAM_CUTPLANE_SPHERES,    //! Used to render the spheres of an item with a cut plane.
    PROGRAM_SPHERES,             //! Used to render one or several spheres.
+   PROGRAM_DARK_SPHERES,        //! Used to render one or several spheres without light (for picking for example).
    PROGRAM_FLAT,                /** Used to render flat shading without pre computing normals*/
    PROGRAM_OLD_FLAT,            /** Used to render flat shading without pre computing normals without geometry shader*/
+   PROGRAM_SOLID_WIREFRAME,     //! Used to render edges with width superior to 1.
+   PROGRAM_NO_INTERPOLATION,   //! Used to render faces without interpolating their color.
+   PROGRAM_HEAT_INTENSITY,      //! Used to render special item in Display_property_plugin
    NB_OF_PROGRAMS               //! Holds the number of different programs in this enum.
   };
 
@@ -83,7 +79,7 @@ public:
  //! The painter is the element that draws everything on screen,
  //! but you should only need this if you want to draw 2D things
  //! on top of the scene, like a selection rectangle.
- //! See <a href="http://doc.qt.io/qt-5/qpainter.html">QPainter's documentation </a> for details.
+ //! See <a href="https://doc.qt.io/qt-5/qpainter.html">QPainter's documentation </a> for details.
  virtual QPainter *getPainter() =0;
 
 
@@ -102,9 +98,18 @@ public:
   virtual bool hasText() const { return false; }
   //! \brief Constructor
   //!
-  //! Creates a valid context for OpenGL 2.1.
+  //! Creates a valid context for OpenGL ES 2.0.
   //! \param parent the parent widget. It usually is the MainWindow.
   Viewer_interface(QWidget* parent) : CGAL::QGLViewer(parent) {}
+  //!
+  //! \brief Constructor for the secondary viewers.
+  //!
+  //! \param parent the parent widget. It usually is the MainWindow.
+  //! \param shared_widget the main viewer of the Application. This will share the
+  //!  context and allow synchronized rendering of multiple views.
+  //!
+  Viewer_interface(QWidget* parent, QOpenGLWidget* shared_widget) 
+    : QGLViewer(shared_widget->context(),parent){}
   virtual ~Viewer_interface() {}
 
   //! \brief Sets the scene for the viewer.
@@ -173,11 +178,11 @@ public:
   //! The textRenderer uses the painter to display 2D text over the 3D Scene.
   //! \returns the viewer's TextRender
   virtual TextRenderer* textRenderer() = 0;
-  //!Allows OpenGL 2.1 context to get access to glDrawArraysInstanced.
+  //!Allows OpenGL ES 2.0 context to get access to glDrawArraysInstanced.
   typedef void (APIENTRYP PFNGLDRAWARRAYSINSTANCEDARBPROC) (GLenum mode, GLint first, GLsizei count, GLsizei primcount);
-  //!Allows OpenGL 2.1 context to get access to glVertexAttribDivisor.
+  //!Allows OpenGL ES 2.0 context to get access to glVertexAttribDivisor.
   typedef void (APIENTRYP PFNGLVERTEXATTRIBDIVISORARBPROC) (GLuint index, GLuint divisor);
-  //!Allows OpenGL 2.1 context to get access to glVertexAttribDivisor.
+  //!Allows OpenGL ES 2.0 context to get access to glVertexAttribDivisor.
   typedef void (APIENTRYP PFNGLFRAMEBUFFERTEXTURE2DEXTPROC) (GLuint target, GLuint attachment, GLuint textarget, GLuint texture, GLint level);
 
   PFNGLDRAWARRAYSINSTANCEDARBPROC glDrawArraysInstanced;
@@ -213,6 +218,9 @@ public:
   //! Returns the static image to be displayed in 2D selection mode.
   virtual const QImage& staticImage() const = 0;
 
+  //!The number of passes that are performed for the scene transparency.
+  //! Customizable from the MainWindow or the SubViewer menu.
+  virtual float total_pass() = 0;
 Q_SIGNALS:
   //!Emit this to signal that the `id`th item has been picked.
   void selected(int id);
@@ -230,6 +238,9 @@ public Q_SLOTS:
   //! If b is true, faces will be ligted from both internal and external side.
   //! If b is false, only the side that is exposed to the light source will be lighted.
   virtual void setTwoSides(bool b) = 0;
+  //! If b is true, then a special color mask is applied to points and meshes to differenciate
+  //! front-faced and back-faced elements.
+  virtual void setBackFrontShading(bool b) =0;
   //! \brief Sets the fast drawing mode
   //! @see inFastDrawing()
   virtual void setFastDrawing(bool b) = 0;
@@ -248,13 +259,31 @@ public Q_SLOTS:
 //! \param animation_duration is the duration of the animation of the movement.
   virtual bool moveCameraToCoordinates(QString target,
                                        float animation_duration = 0.5f) = 0;
+  //!
+  //! Setter for the orthogonal projection of the viewer.
+  //!
+  virtual void SetOrthoProjection( bool b) =0;
 public:
   
   //! Gives acces to recent openGL(4.3) features, allowing use of things like
   //! Geometry Shaders or Depth Textures.
-  //! @returns a pointer to an initialized  QOpenGLFunctions_4_3_Compatibility if `isOpenGL_4_3()` is `true`
-  //! @returns NULL if `isOpenGL_4_3()` is `false`
-  virtual QOpenGLFunctions_4_3_Compatibility* openGL_4_3_functions() = 0;
+  //! @returns a pointer to an initialized  QOpenGLFunctions_4_3_Core if `isOpenGL_4_3()` is `true`
+  //! @returns nullptr if `isOpenGL_4_3()` is `false`
+  virtual QOpenGLFunctions_4_3_Core* openGL_4_3_functions() = 0;
+  //! getter for point size under old openGL context;
+  virtual const GLfloat& getGlPointSize()const = 0;
+  //! setter for point size under old openGL context;
+  virtual void setGlPointSize(const GLfloat& p) = 0;
+  virtual void setCurrentPass(int pass) = 0;
+  virtual void setDepthWriting(bool writing_depth) = 0;
+  virtual void setDepthPeelingFbo(QOpenGLFramebufferObject* fbo) = 0;
+  
+  virtual int currentPass()const = 0;
+  virtual bool isDepthWriting()const = 0;
+  virtual QOpenGLFramebufferObject* depthPeelingFbo() = 0;
+  virtual void makeCurrent() = 0;
+  virtual QVector4D* clipBox() const =0;
+  virtual bool isClipping() const = 0;
 }; // end class Viewer_interface
 }
 }

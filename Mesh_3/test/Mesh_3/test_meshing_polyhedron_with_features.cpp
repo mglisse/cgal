@@ -2,19 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Stephane Tayeb
@@ -39,8 +30,11 @@ struct Polyhedron_with_features_tester : public Tester<K>
   void operator()() const
   {
     typedef CGAL::Mesh_3::Robust_intersection_traits_3<K> Gt;
-    typedef typename CGAL::Mesh_polyhedron_3<Gt>::type Polyhedron;
-    typedef CGAL::Polyhedral_mesh_domain_with_features_3<Gt> Mesh_domain;
+    typedef typename CGAL::Mesh_polyhedron_3<Gt, short>::type Polyhedron;
+    typedef CGAL::Polyhedral_mesh_domain_with_features_3<Gt,
+                                                         Polyhedron,
+                                                         CGAL::Default,
+                                                         short> Mesh_domain;
     
     typedef typename CGAL::Mesh_triangulation_3<
       Mesh_domain,
@@ -70,15 +64,22 @@ struct Polyhedron_with_features_tester : public Tester<K>
     // non-documented, provided to the FEniCS project
     const std::vector<Polyhedron>& polyhedra = domain.polyhedra();
     CGAL_USE(polyhedra);
-    
+
     // Set mesh criteria
+#ifndef CGAL_MESH_3_VERBOSE
     Edge_criteria edge_criteria(0.2);
     Facet_criteria facet_criteria(30, 0.2, 0.02);
     Cell_criteria cell_criteria(3, 0.2);
+#else // a different set of criteria, for the test of CGAL_MESH_3_VERBOSE
+    Edge_criteria edge_criteria(0.3);
+    Facet_criteria facet_criteria(30, 0.3, 0.03);
+    Cell_criteria cell_criteria(3, 0.4);
+#endif
     Mesh_criteria criteria(edge_criteria, facet_criteria, cell_criteria);
 
     // Mesh generation
     C3t3 c3t3 = CGAL::make_mesh_3<C3t3>(domain, criteria,
+                                        CGAL::parameters::manifold(),
                                         CGAL::parameters::no_exude(),
                                         CGAL::parameters::no_perturb());
     

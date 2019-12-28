@@ -4,19 +4,10 @@
 // Copyright (C) 2014 GeometryFactory
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 
 #ifndef CGAL_SURFACE_MESH_IO_H
@@ -327,45 +318,14 @@ bool read_off(Surface_mesh<K>& mesh, const std::string& filename)
 template <typename K>
 bool write_off(const Surface_mesh<K>& mesh, const std::string& filename)
 {
-    typedef Surface_mesh<K> Mesh;
-    typedef typename Mesh::Point Point_3;
-
-    FILE* out = fopen(filename.c_str(), "w");
-    if (!out)
+    std::ofstream out(filename.c_str());
+    if (out.fail())
         return false;
 
+    out << std::setprecision(17);
+    write_off(out, mesh);
 
-    // header
-    fprintf(out, "OFF\n%d %d 0\n", mesh.num_vertices(), mesh.num_faces());
-
-
-    // vertices
-    typename Mesh::template Property_map<typename Mesh::Vertex_index, Point_3> points
-      = mesh.template property_map<typename Mesh::Vertex_index, Point_3>("v:point").first;
-    for (typename Mesh::Vertex_iterator vit=mesh.vertices_begin(); vit!=mesh.vertices_end(); ++vit)
-    {
-        const Point_3& p = points[*vit];
-        fprintf(out, "%.10f %.10f %.10f\n", p[0], p[1], p[2]);
-    }
-
-
-    // faces
-    for (typename Surface_mesh<K>::Face_iterator fit=mesh.faces_begin(); fit!=mesh.faces_end(); ++fit)
-    {
-        int nV = mesh.degree(*fit);
-        fprintf(out, "%d", nV);
-        typename Surface_mesh<K>::Vertex_around_face_circulator fvit(mesh.halfedge(*fit),mesh), fvend=fvit;
-        do
-        {
-          typename Surface_mesh<K>::size_type idx = *fvit;
-          fprintf(out, " %d", idx);
-        }
-        while (++fvit != fvend);
-        fprintf(out, "\n");
-    }
-
-    fclose(out);
-    return true;
+    return !out.fail();
 }
 
 #if 0
@@ -435,7 +395,6 @@ bool write_mesh(const Surface_mesh<K>& mesh, const std::string& filename)
 }
 
 /// group io
-/// @}
 template <class P, class Writer>
 void
 generic_print_surface_mesh( std::ostream&   out,
@@ -463,6 +422,19 @@ generic_print_surface_mesh( std::ostream&   out,
                          ::CGAL::to_double( get(map, *vi).z()));
 
     hint = index_map.insert(hint, std::make_pair(*vi, id++));
+  }
+  typedef typename boost::property_traits<VPmap>::value_type Point_3;
+  typedef typename Kernel_traits<Point_3>::Kernel K;
+  typename Surface_mesh<P>::template Property_map<typename Surface_mesh<P>::Vertex_index, typename K::Vector_3 > vnormals;
+  bool has_normals = false;
+  boost::tie(vnormals, has_normals) = M.template property_map<typename Surface_mesh<P>::Vertex_index, typename K::Vector_3>("v:normal");
+  if(has_normals)
+  {
+    for( VCI vi = vertices(M).begin(); vi != vertices(M).end(); ++vi) {
+      writer.write_vertex_normal( ::CGAL::to_double( get(vnormals, *vi).x()),
+                                  ::CGAL::to_double( get(vnormals, *vi).y()),
+                                  ::CGAL::to_double( get(vnormals, *vi).z()));
+    }
   }
 
   writer.write_facet_header();

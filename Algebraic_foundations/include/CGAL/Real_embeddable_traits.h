@@ -1,20 +1,11 @@
 // Copyright (c) 2006-2007 Max-Planck-Institute Saarbruecken (Germany).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0+
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Michael Hemmer    <hemmer@mpi-inf.mpg.de>
@@ -37,7 +28,7 @@ struct  Is_zero_selector{ typedef AST_is_zero Type; };
 template< class T >
 struct Is_zero_selector< T, Null_functor >
 {
-  struct Type : public CGAL::unary_function< T, bool >{
+  struct Type : public CGAL::cpp98::unary_function< T, bool >{
     bool operator()( const T& x ) const {
       return x == T(0);
     }
@@ -81,7 +72,7 @@ public:
   Is_zero;
   
   //! The generic \c Is_finite functor returns true
-  class Is_finite : public CGAL::unary_function< Type, Boolean > {
+  class Is_finite : public CGAL::cpp98::unary_function< Type, Boolean > {
   public:
     Boolean operator()( const Type& ) const {
       return true;
@@ -91,7 +82,7 @@ public:
   //! The generic \c Abs functor implementation
   //! uses one comparisons and the unary minus if necessary.
   class Abs
-    : public CGAL::unary_function< Type, Type > {
+    : public CGAL::cpp98::unary_function< Type, Type > {
   public:
     //! the function call.
     Type  operator()( const Type& x ) const {
@@ -101,7 +92,7 @@ public:
     
   //! The generic \c Sgn functor implementation uses two comparisons.
   class Sgn 
-    : public CGAL::unary_function< Type, ::CGAL::Sign > {
+    : public CGAL::cpp98::unary_function< Type, ::CGAL::Sign > {
   public:
     //! the function call.
     ::CGAL::Sign operator()( const Type& x ) const {
@@ -115,7 +106,7 @@ public:
     
   //! The generic \c Is_positive functor implementation uses one comparison.
   class Is_positive 
-    : public CGAL::unary_function< Type, Boolean > {
+    : public CGAL::cpp98::unary_function< Type, Boolean > {
   public:        
     //! the function call.
     Boolean operator()( const Type& x ) const {
@@ -125,7 +116,7 @@ public:
     
   //! The generic \c Is_negative functor implementation uses one comparison.
   class Is_negative 
-    : public CGAL::unary_function< Type, Boolean > {
+    : public CGAL::cpp98::unary_function< Type, Boolean > {
   public:        
     //! the function call.
     Boolean operator()( const Type& x ) const {
@@ -135,7 +126,7 @@ public:
         
   //! The generic \c Compare functor implementation uses two comparisons.
   class Compare 
-    : public CGAL::binary_function< Type, Type,
+    : public CGAL::cpp98::binary_function< Type, Type,
                                 Comparison_result > {
   public:
     //! the function call.
@@ -152,7 +143,7 @@ public:
         Comparison_result )
       };
   
-  class To_double : public CGAL::unary_function< Type, double > {     
+  class To_double : public CGAL::cpp98::unary_function< Type, double > {
   public:
     double operator()( const Type& x ) const {
       return static_cast<double>(x);
@@ -160,7 +151,7 @@ public:
   };
   
   class To_interval 
-    : public CGAL::unary_function< Type, std::pair<double,double> > {     
+    : public CGAL::cpp98::unary_function< Type, std::pair<double,double> > {
   public:
     std::pair<double,double> operator()( const Type& x ) const {
       double dx(static_cast<double>(x));

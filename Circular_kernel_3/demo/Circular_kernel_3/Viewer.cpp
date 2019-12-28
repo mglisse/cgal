@@ -56,24 +56,24 @@ void Viewer::compile_shaders()
         "varying highp vec4 fP; \n"
         "varying highp vec3 fN; \n"
         "uniform highp vec4 color; \n"
-        "uniform vec4 light_pos;  \n"
-        "uniform vec4 light_diff; \n"
-        "uniform vec4 light_spec; \n"
-        "uniform vec4 light_amb;  \n"
+        "uniform highp vec4 light_pos;  \n"
+        "uniform highp vec4 light_diff; \n"
+        "uniform highp vec4 light_spec; \n"
+        "uniform highp vec4 light_amb;  \n"
         "uniform float spec_power ; \n"
 
         "void main(void) { \n"
 
-        "   vec3 L = light_pos.xyz - fP.xyz; \n"
-        "   vec3 V = -fP.xyz; \n"
+        "   highp vec3 L = light_pos.xyz - fP.xyz; \n"
+        "   highp vec3 V = -fP.xyz; \n"
 
-        "   vec3 N = normalize(fN); \n"
+        "   highp vec3 N = normalize(fN); \n"
         "   L = normalize(L); \n"
         "   V = normalize(V); \n"
 
-        "   vec3 R = reflect(-L, N); \n"
-        "   vec4 diffuse = max(dot(N,L), 0.0) * light_diff * color; \n"
-        "   vec4 specular = pow(max(dot(R,V), 0.0), spec_power) * light_spec; \n"
+        "   highp vec3 R = reflect(-L, N); \n"
+        "   highp vec4 diffuse = max(dot(N,L), 0.0) * light_diff * color; \n"
+        "   highp vec4 specular = pow(max(dot(R,V), 0.0), spec_power) * light_spec; \n"
 
         "gl_FragColor = light_amb*color + diffuse  ; \n"
         "} \n"
@@ -116,6 +116,7 @@ void Viewer::compile_shaders()
                  "uniform highp mat4 mvp_matrix;\n"
                  "void main(void)\n"
                  "{\n"
+                 "   gl_PointSize = 4.0;\n"
                  "   gl_Position = mvp_matrix * vertex;\n"
                  "}"
              };
@@ -813,12 +814,10 @@ void Viewer::draw()
     }
     else
     {
-        glPointSize(4.0f);
         rendering_program_no_ext.bind();
         rendering_program_no_ext.setUniformValue(colorLocation, color);
         glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(pos_points.size()/3));
         rendering_program_no_ext.release();
-        glPointSize(1.0f);
     }
 
     vao[2].release();
