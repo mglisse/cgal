@@ -36,12 +36,12 @@ template < typename Base_, typename AK_, typename EK_ >
 struct Cartesian_filter_all : public Base_,
   private Store_kernel<AK_>, private Store_kernel2<EK_>
 {
-    CGAL_CONSTEXPR Cartesian_filter_all(){}
-    CGAL_CONSTEXPR Cartesian_filter_all(int d):Base_(d){}
+    constexpr Cartesian_filter_all(){}
+    constexpr Cartesian_filter_all(int d):Base_(d){}
     //FIXME: or do we want an instance of AK and EK belonging to this kernel,
     //instead of a reference to external ones?
-    CGAL_CONSTEXPR Cartesian_filter_all(AK_ const&a,EK_ const&b):Base_(),Store_kernel<AK_>(a),Store_kernel2<EK_>(b){}
-    CGAL_CONSTEXPR Cartesian_filter_all(int d,AK_ const&a,EK_ const&b):Base_(d),Store_kernel<AK_>(a),Store_kernel2<EK_>(b){}
+    constexpr Cartesian_filter_all(AK_ const&a,EK_ const&b):Base_(),Store_kernel<AK_>(a),Store_kernel2<EK_>(b){}
+    constexpr Cartesian_filter_all(int d,AK_ const&a,EK_ const&b):Base_(d),Store_kernel<AK_>(a),Store_kernel2<EK_>(b){}
     typedef Base_ Kernel_base;
     typedef AK_ AK;
     typedef EK_ EK;

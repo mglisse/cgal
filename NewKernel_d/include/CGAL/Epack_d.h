@@ -44,8 +44,8 @@ template<class Dim>
 struct Epack_d_help1
 : CGAL_BASE
 {
-  CGAL_CONSTEXPR Epack_d_help1(){}
-  CGAL_CONSTEXPR Epack_d_help1(int d):CGAL_BASE(d){}
+  constexpr Epack_d_help1(){}
+  constexpr Epack_d_help1(int d):CGAL_BASE(d){}
 };
 #undef CGAL_BASE
 #define CGAL_BASE \
@@ -54,8 +54,8 @@ template<class Dim>
 struct Epack_d_help2
 : CGAL_BASE
 {
-  CGAL_CONSTEXPR Epack_d_help2(){}
-  CGAL_CONSTEXPR Epack_d_help2(int d):CGAL_BASE(d){}
+  constexpr Epack_d_help2(){}
+  constexpr Epack_d_help2(int d):CGAL_BASE(d){}
 };
 #undef CGAL_BASE
 #define CGAL_BASE \
@@ -67,8 +67,8 @@ template<class Dim>
 struct Epack_d
 : CGAL_BASE
 {
-  CGAL_CONSTEXPR Epack_d(){}
-  CGAL_CONSTEXPR Epack_d(int d):CGAL_BASE(d){}
+  constexpr Epack_d(){}
+  constexpr Epack_d(int d):CGAL_BASE(d){}
 };
 #undef CGAL_BASE
 }
