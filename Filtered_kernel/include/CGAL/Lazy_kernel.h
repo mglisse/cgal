@@ -170,6 +170,8 @@ public:
   typedef CGAL::Aff_transformationC2<Kernel>              Aff_transformation_2;
   typedef CGAL::Aff_transformationC3<Kernel>              Aff_transformation_3;
 
+  struct Special;
+
 private:
   // We use a combination of partial and logic to extract the right
   // construction. Constructions without a result_type always have to
@@ -284,7 +286,55 @@ public:
 #include <CGAL/Kernel/interface_macros.h>
 };
 
-
+template < typename EK_, typename AK_, typename E2A_, typename Kernel_ >
+struct Lazy_kernel_generic_base<EK_, AK_, E2A_, Kernel_>::Special
+{
+  typedef typename AK_::Construct_weighted_point_2 CWP2;
+  typedef typename AK_::Construct_weighted_point_3 CWP3;
+  typedef typename AK_::Construct_segment_2 CS2;
+  typedef typename AK_::Construct_segment_3 CS3;
+  typedef typename Kernel_::Point_2 Point_2;
+  typedef typename Kernel_::Point_3 Point_3;
+  typedef typename Kernel_::FT FT;
+  template <class...> struct apply_ {
+    struct type {
+      static constexpr bool noprune = false;
+      template<class T> static void* get_first_of_tuple_like(T&&)  { return nullptr; }
+      template<class T> static void* get_second_of_tuple_like(T&&) { return nullptr; }
+    };
+  };
+  struct T1 {
+    // We disable pruning completely, so we can still read through after exact() has been called, which would be hard to check with threads.
+    static constexpr bool noprune = true;
+    template<class T> static void* get_first_of_tuple_like(T&&t)  { return &std::get<1>(t); }
+    template<class T> static void* get_second_of_tuple_like(T&&t) { return &std::get<2>(t); }
+  };
+  struct T2 { // for Weighted_point(Point, int)
+    static constexpr bool noprune = true;
+    template<class T> static void* get_first_of_tuple_like(T&&t)  { return &std::get<1>(t); }
+    template<class T> static void* get_second_of_tuple_like(T&&t) { return nullptr; }
+  };
+  template<class NT> struct apply_<std::enable_if_t<std::is_convertible<NT, FT>::value && !std::is_same<NT, FT>::value>, CWP2, Return_base_tag, Point_2, NT> {
+    typedef T2 type;
+  };
+  template<class NT> struct apply_<std::enable_if_t<std::is_convertible<NT, FT>::value && !std::is_same<NT, FT>::value>, CWP3, Return_base_tag, Point_3, NT> {
+    typedef T2 type;
+  };
+  template<class Void> struct apply_<Void, CWP2, Return_base_tag, Point_2, FT> {
+    typedef T1 type;
+  };
+  template<class Void> struct apply_<Void, CWP3, Return_base_tag, Point_3, FT> {
+    typedef T1 type;
+  };
+  template<class Void> struct apply_<Void, CS2, Return_base_tag, Point_2, Point_2> {
+    typedef T1 type;
+  };
+  template<class Void> struct apply_<Void, CS3, Return_base_tag, Point_3, Point_3> {
+    typedef T1 type;
+  };
+  // Dummy extra parameter so work around the interdiction of full specialization.
+  template <class...T> using apply = apply_<void, T...>;
+};
 
 
 
@@ -325,25 +375,9 @@ public:
 
     FT operator()(const Weighted_point_2& p) const
     {
-
-      typedef Lazy_rep_n<typename Approximate_kernel::Weighted_point_2,
-                         typename Exact_kernel::Weighted_point_2,
-                         typename Approximate_kernel::Construct_weighted_point_2,
-                         typename Exact_kernel::Construct_weighted_point_2,
-                         E2A_,
-                         true,
-                         Return_base_tag,
-                         Point_2,
-                         FT
-                         > LR;
-
-
-      LR * lr = dynamic_cast<LR*>(p.ptr());
-      // Another thread could reset lr->l between the next 2 lines, so we disable reset for Construct_weighted_point_2 in MT-mode.
-      // We could also always disable reset for Construct_weighted_point_2 and return lr->l here even if update_exact has run.
-      if(lr && lr->is_lazy()){
-        return std::get<2>(lr->l);
-      }
+      void* pp = p.ptr()->get_second_of_tuple_like();
+      if (pp)
+        return *static_cast<FT*>(pp);
       return BaseClass().compute_weight_2_object()(p);
     }
 
@@ -358,23 +392,9 @@ public:
 
     FT operator()(const Weighted_point_3& p) const
     {
-
-      typedef Lazy_rep_n<typename Approximate_kernel::Weighted_point_3,
-                         typename Exact_kernel::Weighted_point_3,
-                         typename Approximate_kernel::Construct_weighted_point_3,
-                         typename Exact_kernel::Construct_weighted_point_3,
-                         E2A_,
-                         true,
-                         Return_base_tag,
-                         Point_3,
-                         FT
-                         > LR;
-
-
-      LR * lr = dynamic_cast<LR*>(p.ptr());
-      if(lr && lr->is_lazy()){
-        return std::get<2>(lr->l);
-      }
+      void* pp = p.ptr()->get_second_of_tuple_like();
+      if (pp)
+        return *static_cast<FT*>(pp);
       return BaseClass().compute_weight_3_object()(p);
     }
 
@@ -397,39 +417,9 @@ public:
 
     Point_2 operator()(const Weighted_point_2& p) const
     {
-      typedef Lazy_rep_n<typename Approximate_kernel::Weighted_point_2,
-                         typename Exact_kernel::Weighted_point_2,
-                         typename Approximate_kernel::Construct_weighted_point_2,
-                         typename Exact_kernel::Construct_weighted_point_2,
-                         E2A_,
-                         true,
-                         Return_base_tag,
-                         Point_2,
-                         FT
-                         > LR;
-
-      typedef Lazy_rep_n<typename Approximate_kernel::Weighted_point_2,
-                         typename Exact_kernel::Weighted_point_2,
-                         typename Approximate_kernel::Construct_weighted_point_2,
-                         typename Exact_kernel::Construct_weighted_point_2,
-                         E2A_,
-                         true,
-                         Return_base_tag,
-                         Point_2,
-                         int
-                         > LRint;
-
-      LR * lr = dynamic_cast<LR*>(p.ptr());
-      if(lr){
-        if(lr->is_lazy())
-          return std::get<1>(lr->l);
-      } else {
-        LRint* lrint = dynamic_cast<LRint*>(p.ptr());
-        if(lrint && lrint->is_lazy()){
-          return std::get<1>(lrint->l);
-        }
-      }
-
+      void* pp = p.ptr()->get_first_of_tuple_like();
+      if (pp)
+        return *static_cast<Point_2*>(pp);
       return BaseClass().construct_point_2_object()(p);
     }
 
@@ -452,39 +442,9 @@ public:
 
     Point_3 operator()(const Weighted_point_3& p) const
     {
-      typedef Lazy_rep_n<typename Approximate_kernel::Weighted_point_3,
-                         typename Exact_kernel::Weighted_point_3,
-                         typename Approximate_kernel::Construct_weighted_point_3,
-                         typename Exact_kernel::Construct_weighted_point_3,
-                         E2A_,
-                         true,
-                         Return_base_tag,
-                         Point_3,
-                         FT
-                         > LR;
-
-      typedef Lazy_rep_n<typename Approximate_kernel::Weighted_point_3,
-                         typename Exact_kernel::Weighted_point_3,
-                         typename Approximate_kernel::Construct_weighted_point_3,
-                         typename Exact_kernel::Construct_weighted_point_3,
-                         E2A_,
-                         true,
-                         Return_base_tag,
-                         Point_3,
-                         int
-                         > LRint;
-
-
-      LR * lr = dynamic_cast<LR*>(p.ptr());
-      if(lr){
-        if(lr->is_lazy())
-          return std::get<1>(lr->l);
-      }else{
-        LRint* lrint = dynamic_cast<LRint*>(p.ptr());
-        if(lrint && lrint->is_lazy()){
-          return std::get<1>(lrint->l);
-        }
-      }
+      void* pp = p.ptr()->get_first_of_tuple_like();
+      if (pp)
+        return *static_cast<Point_3*>(pp);
       return BaseClass().construct_point_3_object()(p);
     }
 

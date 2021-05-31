@@ -281,6 +281,14 @@ struct Lazy_cartesian :
       C2E(Kernel const&, Exact_kernel const&){}
       template<class T>decltype(auto)operator()(T const&t)const{return  CGAL::exact(t);}
     };
+    struct Special{ // facility currently only used by Kernel_23
+      struct A { struct type {
+        static constexpr bool noprune = false;
+        template<class T> static void* get_first_of_tuple_like(T&&)  { return nullptr; }
+        template<class T> static void* get_second_of_tuple_like(T&&) { return nullptr; }
+      };};
+      template<class...>using apply=A;
+    };
 
     typedef typename Exact_kernel::Rep_tag Rep_tag;
     typedef typename Exact_kernel::Kernel_tag Kernel_tag;
