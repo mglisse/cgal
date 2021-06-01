@@ -285,7 +285,17 @@ public:
 };
 
 
-
+// Comparing just the addresses (with name()) may mean we miss some cases when
+// the Weighted_point_3 was constructed in one DLL and we try to extract the
+// Point_3 in another DLL. However, the exact comparison with == can be
+// expensive on some platforms, especially when it returns false (memcmp of the
+// names), and since this is just an optimization, the cost does not seem worth
+// it.
+#ifndef CGAL_COMPARE_TYPEID_EXACT
+# define CGAL_CMP_TYPEID(a,b) ((a).name() == (b).name())
+#else
+# define CGAL_CMP_TYPEID(a,b) ((a) == (b))
+#endif
 
 
 template < typename EK_, typename AK_, typename E2A_, typename Kernel_ >
@@ -338,11 +348,13 @@ public:
                          > LR;
 
 
-      LR * lr = dynamic_cast<LR*>(p.ptr());
-      // Another thread could reset lr->l between the next 2 lines, so we disable reset for Construct_weighted_point_2 in MT-mode.
-      // We could also always disable reset for Construct_weighted_point_2 and return lr->l here even if update_exact has run.
-      if(lr && lr->is_lazy()){
-        return std::get<2>(lr->l);
+      auto&& ti = typeid(*p.ptr());
+      if(CGAL_CMP_TYPEID(ti, typeid(LR))){
+        LR * lr = static_cast<LR*>(p.ptr());
+        // Another thread could reset lr->l between the next 2 lines, so we disable reset for Construct_weighted_point_2 in MT-mode.
+        // We could also always disable reset for Construct_weighted_point_2 and return lr->l here even if update_exact has run.
+        if(lr->is_lazy())
+          return std::get<2>(lr->l);
       }
       return BaseClass().compute_weight_2_object()(p);
     }
@@ -371,9 +383,11 @@ public:
                          > LR;
 
 
-      LR * lr = dynamic_cast<LR*>(p.ptr());
-      if(lr && lr->is_lazy()){
-        return std::get<2>(lr->l);
+      auto&& ti = typeid(*p.ptr());
+      if(CGAL_CMP_TYPEID(ti, typeid(LR))){
+        LR * lr = static_cast<LR*>(p.ptr());
+        if(lr->is_lazy())
+          return std::get<2>(lr->l);
       }
       return BaseClass().compute_weight_3_object()(p);
     }
@@ -419,14 +433,16 @@ public:
                          int
                          > LRint;
 
-      LR * lr = dynamic_cast<LR*>(p.ptr());
-      if(lr){
+      auto&& ti = typeid(*p.ptr());
+      if(CGAL_CMP_TYPEID(ti, typeid(LR))){
+        LR * lr = static_cast<LR*>(p.ptr());
         if(lr->is_lazy())
           return std::get<1>(lr->l);
-      } else {
-        LRint* lrint = dynamic_cast<LRint*>(p.ptr());
-        if(lrint && lrint->is_lazy()){
-          return std::get<1>(lrint->l);
+      }else{
+        if(CGAL_CMP_TYPEID(ti, typeid(LRint))){
+          LRint* lrint = static_cast<LRint*>(p.ptr());
+          if(lrint->is_lazy())
+            return std::get<1>(lrint->l);
         }
       }
 
@@ -475,14 +491,16 @@ public:
                          > LRint;
 
 
-      LR * lr = dynamic_cast<LR*>(p.ptr());
-      if(lr){
+      auto&& ti = typeid(*p.ptr());
+      if(CGAL_CMP_TYPEID(ti, typeid(LR))){
+        LR * lr = static_cast<LR*>(p.ptr());
         if(lr->is_lazy())
           return std::get<1>(lr->l);
       }else{
-        LRint* lrint = dynamic_cast<LRint*>(p.ptr());
-        if(lrint && lrint->is_lazy()){
-          return std::get<1>(lrint->l);
+        if(CGAL_CMP_TYPEID(ti, typeid(LRint))){
+          LRint* lrint = static_cast<LRint*>(p.ptr());
+          if(lrint->is_lazy())
+            return std::get<1>(lrint->l);
         }
       }
       return BaseClass().construct_point_3_object()(p);
