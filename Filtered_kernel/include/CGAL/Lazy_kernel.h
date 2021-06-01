@@ -292,9 +292,11 @@ public:
 // names), and since this is just an optimization, the cost does not seem worth
 // it.
 #ifndef CGAL_COMPARE_TYPEID_EXACT
-# define CGAL_CMP_TYPEID(a,b) ((a).name() == (b).name())
+# define CGAL_GET_TYPEID_N(a) const char* tin = typeid(a).name()
+# define CGAL_CMP_TYPEID(a) (typeid(a).name() == tin)
 #else
-# define CGAL_CMP_TYPEID(a,b) ((a) == (b))
+# define CGAL_GET_TYPEID_N(a) auto&& ti = typeid(a)
+# define CGAL_CMP_TYPEID(a) (typeid(a) == ti)
 #endif
 
 
@@ -348,8 +350,8 @@ public:
                          > LR;
 
 
-      auto&& ti = typeid(*p.ptr());
-      if(CGAL_CMP_TYPEID(ti, typeid(LR))){
+      CGAL_GET_TYPEID_N(*p.ptr());
+      if(CGAL_CMP_TYPEID(LR)){
         LR * lr = static_cast<LR*>(p.ptr());
         // Another thread could reset lr->l between the next 2 lines, so we disable reset for Construct_weighted_point_2 in MT-mode.
         // We could also always disable reset for Construct_weighted_point_2 and return lr->l here even if update_exact has run.
@@ -383,8 +385,8 @@ public:
                          > LR;
 
 
-      auto&& ti = typeid(*p.ptr());
-      if(CGAL_CMP_TYPEID(ti, typeid(LR))){
+      CGAL_GET_TYPEID_N(*p.ptr());
+      if(CGAL_CMP_TYPEID(LR)){
         LR * lr = static_cast<LR*>(p.ptr());
         if(lr->is_lazy())
           return std::get<2>(lr->l);
@@ -433,13 +435,13 @@ public:
                          int
                          > LRint;
 
-      auto&& ti = typeid(*p.ptr());
-      if(CGAL_CMP_TYPEID(ti, typeid(LR))){
+      CGAL_GET_TYPEID_N(*p.ptr());
+      if(CGAL_CMP_TYPEID(LR)){
         LR * lr = static_cast<LR*>(p.ptr());
         if(lr->is_lazy())
           return std::get<1>(lr->l);
       }else{
-        if(CGAL_CMP_TYPEID(ti, typeid(LRint))){
+        if(CGAL_CMP_TYPEID(LRint)){
           LRint* lrint = static_cast<LRint*>(p.ptr());
           if(lrint->is_lazy())
             return std::get<1>(lrint->l);
@@ -491,13 +493,13 @@ public:
                          > LRint;
 
 
-      auto&& ti = typeid(*p.ptr());
-      if(CGAL_CMP_TYPEID(ti, typeid(LR))){
+      CGAL_GET_TYPEID_N(*p.ptr());
+      if(CGAL_CMP_TYPEID(LR)){
         LR * lr = static_cast<LR*>(p.ptr());
         if(lr->is_lazy())
           return std::get<1>(lr->l);
       }else{
-        if(CGAL_CMP_TYPEID(ti, typeid(LRint))){
+        if(CGAL_CMP_TYPEID(LRint)){
           LRint* lrint = static_cast<LRint*>(p.ptr());
           if(lrint->is_lazy())
             return std::get<1>(lrint->l);
@@ -598,6 +600,8 @@ struct Lazy_kernel
 
 } //namespace CGAL
 
+#undef CGAL_GET_TYPEID_N
+#undef CGAL_CMP_TYPEID
 
 #if defined(BOOST_MSVC)
 #  pragma warning(pop)
