@@ -291,11 +291,12 @@ public:
 // expensive on some platforms, especially when it returns false (memcmp of the
 // names), and since this is just an optimization, the cost does not seem worth
 // it.
+// typeid(*X) implies a null pointer check, going through obj avoids it.
 #ifndef CGAL_COMPARE_TYPEID_EXACT
-# define CGAL_GET_TYPEID_N(a) const char* tin = typeid(a).name()
+# define CGAL_GET_TYPEID_N(a) auto& obj = (a); const char* tin = typeid(obj).name()
 # define CGAL_CMP_TYPEID(a) (typeid(a).name() == tin)
 #else
-# define CGAL_GET_TYPEID_N(a) auto&& ti = typeid(a)
+# define CGAL_GET_TYPEID_N(a) auto& obj = (a); auto&& ti = typeid(obj)
 # define CGAL_CMP_TYPEID(a) (typeid(a) == ti)
 #endif
 
