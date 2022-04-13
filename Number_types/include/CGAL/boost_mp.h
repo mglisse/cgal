@@ -220,6 +220,52 @@ namespace Boost_MP_internal {
     return shift_positive_interval(intv, -shift);
   }
 
+  // This is a version of to_interval that converts an integer type into a
+  // double tight interval.
+  template<typename ET>
+  std::pair<double, double> to_interval( ET x, int extra_shift = 0 ) {
+
+    CGAL_assertion_code(const ET input = x);
+    double l = 0.0, u = 0.0;
+    if (CGAL::is_zero(x)) { // return [0.0, 0.0]
+      CGAL_assertion(are_bounds_correct(l, u, input));
+      return std::make_pair(l, u);
+    }
+    CGAL_assertion(!CGAL::is_zero(x));
+
+    bool change_sign = false;
+    const bool is_pos = CGAL::is_positive(x);
+    if (!is_pos) {
+      change_sign = true;
+      x = -x;
+    }
+    CGAL_assertion(CGAL::is_positive(x));
+
+    const int64_t n = static_cast<int64_t>(boost::multiprecision::msb(x)) + 1;
+    const int64_t num_dbl_digits = std::numeric_limits<double>::digits;
+
+    if (n > num_dbl_digits) {
+      const int64_t mindig = static_cast<int64_t>(boost::multiprecision::lsb(x));
+      int e = static_cast<int>(n - num_dbl_digits);
+      x >>= e;
+      if (n - mindig > num_dbl_digits)
+        std::tie(l, u) = get_1ulp_interval(-e+extra_shift, static_cast<uint64_t>(x));
+      else
+        std::tie(l, u) = get_0ulp_interval(-e+extra_shift, static_cast<uint64_t>(x));
+    } else {
+      // if extra_shift != 0 ....
+      l = u = std::ldexp(static_cast<double>(static_cast<uint64_t>(x)),(int)extra_shift);
+    }
+
+    if (change_sign) {
+      const double t = l;
+      l = -u;
+      u = -t;
+    }
+
+    CGAL_assertion(are_bounds_correct(l, u, input));
+    return std::make_pair(l, u);
+  }
   // This is a version of to_interval that converts a rational type into a
   // double tight interval.
   template<typename Type, typename ET>
@@ -233,6 +279,8 @@ namespace Boost_MP_internal {
       return std::make_pair(l, u);
     }
     CGAL_assertion(!CGAL::is_zero(xnum));
+
+    
 
     // Handle signs.
     bool change_sign = false;
@@ -253,6 +301,20 @@ namespace Boost_MP_internal {
     const int64_t num_dbl_digits = std::numeric_limits<double>::digits - 1;
     const int64_t msb_num = static_cast<int64_t>(boost::multiprecision::msb(xnum));
     const int64_t msb_den = static_cast<int64_t>(boost::multiprecision::msb(xden));
+
+    if(msb_den == lsb(xden)) {
+      std::tie(l,u)=to_interval(xnum, -msb_den); // ??? +-1
+      if (change_sign) {
+	const double t = l;
+	l = -u;
+	u = -t;
+      }
+
+      CGAL_assertion(are_bounds_correct(l, u, input));
+      return std::make_pair(l, u);
+    }
+
+
     const int64_t msb_diff = msb_num - msb_den;
     // Shift so the division result has at least 53 (and at most 54) bits
     int shift = static_cast<int>(num_dbl_digits - msb_diff + 1);
@@ -290,51 +352,6 @@ namespace Boost_MP_internal {
     return std::make_pair(l, u);
   }
 
-  // This is a version of to_interval that converts an integer type into a
-  // double tight interval.
-  template<typename ET>
-  std::pair<double, double> to_interval( ET x ) {
-
-    CGAL_assertion_code(const ET input = x);
-    double l = 0.0, u = 0.0;
-    if (CGAL::is_zero(x)) { // return [0.0, 0.0]
-      CGAL_assertion(are_bounds_correct(l, u, input));
-      return std::make_pair(l, u);
-    }
-    CGAL_assertion(!CGAL::is_zero(x));
-
-    bool change_sign = false;
-    const bool is_pos = CGAL::is_positive(x);
-    if (!is_pos) {
-      change_sign = true;
-      x = -x;
-    }
-    CGAL_assertion(CGAL::is_positive(x));
-
-    const int64_t n = static_cast<int64_t>(boost::multiprecision::msb(x)) + 1;
-    const int64_t num_dbl_digits = std::numeric_limits<double>::digits;
-
-    if (n > num_dbl_digits) {
-      const int64_t mindig = static_cast<int64_t>(boost::multiprecision::lsb(x));
-      int e = static_cast<int>(n - num_dbl_digits);
-      x >>= e;
-      if (n - mindig > num_dbl_digits)
-        std::tie(l, u) = get_1ulp_interval(-e, static_cast<uint64_t>(x));
-      else
-        std::tie(l, u) = get_0ulp_interval(-e, static_cast<uint64_t>(x));
-    } else {
-      l = u = static_cast<double>(static_cast<uint64_t>(x));
-    }
-
-    if (change_sign) {
-      const double t = l;
-      l = -u;
-      u = -t;
-    }
-
-    CGAL_assertion(are_bounds_correct(l, u, input));
-    return std::make_pair(l, u);
-  }
 
 } // Boost_MP_internal
 
