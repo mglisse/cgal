@@ -254,7 +254,7 @@ namespace Boost_MP_internal {
         std::tie(l, u) = get_0ulp_interval(-e+extra_shift, static_cast<uint64_t>(x));
     } else {
       // if extra_shift != 0 ....
-      l = u = std::ldexp(static_cast<double>(static_cast<uint64_t>(x)),(int)extra_shift);
+      l = u = std::ldexp(static_cast<double>(static_cast<uint64_t>(x)),-(int)extra_shift);
     }
 
     if (change_sign) {
@@ -263,7 +263,7 @@ namespace Boost_MP_internal {
       u = -t;
     }
 
-    CGAL_assertion(are_bounds_correct(l, u, input));
+    CGAL_assertion(extra_shift != 0 || are_bounds_correct(l, u, input));
     return std::make_pair(l, u);
   }
   // This is a version of to_interval that converts a rational type into a
@@ -303,11 +303,11 @@ namespace Boost_MP_internal {
     const int64_t msb_den = static_cast<int64_t>(boost::multiprecision::msb(xden));
 
     if(msb_den == lsb(xden)) {
-      std::tie(l,u)=to_interval(xnum, -msb_den); // ??? +-1
+      std::tie(l,u)=to_interval(xnum, msb_den);
       if (change_sign) {
-	const double t = l;
-	l = -u;
-	u = -t;
+        const double t = l;
+        l = -u;
+        u = -t;
       }
 
       CGAL_assertion(are_bounds_correct(l, u, input));
