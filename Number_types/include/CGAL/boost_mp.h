@@ -280,8 +280,6 @@ namespace Boost_MP_internal {
     }
     CGAL_assertion(!CGAL::is_zero(xnum));
 
-    
-
     // Handle signs.
     bool change_sign = false;
     const bool is_num_pos = CGAL::is_positive(xnum);
@@ -302,6 +300,13 @@ namespace Boost_MP_internal {
     const int64_t msb_num = static_cast<int64_t>(boost::multiprecision::msb(xnum));
     const int64_t msb_den = static_cast<int64_t>(boost::multiprecision::msb(xden));
 
+    // An alternative strategy would be to convert numerator and denominator to
+    // intervals, then divide. However, this would require setting the rounding
+    // mode (and dividing intervals is not completely free). An important
+    // special case is when the rational is exactly equal to a double
+    // (fit_in_double). Then the denominator is a power of 2, so we can skip
+    // the division and it becomes unnecessary to set the rounding mode, we
+    // just need to modify the exponent correction for the denominator.
     if(msb_den == lsb(xden)) {
       std::tie(l,u)=to_interval(xnum, msb_den);
       if (change_sign) {
