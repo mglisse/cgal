@@ -52,7 +52,7 @@ template < typename FT_, typename Dim_,
   /* Default LA to Vec or to LA_eigen? */
 struct Cartesian_LA_base_d : public Dimension_base<Dim_>
 {
-    typedef Cartesian_LA_base_d<FT_,Dim_>               Self;
+    typedef Cartesian_LA_base_d<FT_,Dim_,Vec_,LA_>      Self;
     typedef Cartesian_tag                               Rep_tag;
     typedef Cartesian_tag                               Kernel_tag;
     typedef Dim_              Default_ambient_dimension;
