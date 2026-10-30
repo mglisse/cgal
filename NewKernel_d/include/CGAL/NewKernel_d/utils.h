@@ -20,6 +20,7 @@
                                 // https://lists.boost.org/boost-users/2014/11/83291.php
 #endif
 
+#include <memory>
 #include <type_traits>
 #include <utility>
 #include <boost/preprocessor/repetition.hpp>
@@ -67,24 +68,24 @@ struct Has_type_different_from <T, No, true>
         };
 
         template<class T> struct Scale {
-                T const& scale;
-                Scale(T const& t):scale(t){}
+                T const* scale;
+                Scale(T const& t):scale(std::addressof(t)){}
                 template<class FT>
                 decltype(auto) operator()(FT&& x)const
                 {
-                        return (scale*std::forward<FT>(x));
+                        return (*scale*std::forward<FT>(x));
                 }
         };
         template<class NT,class T> struct Divide {
-                T const& scale;
-                Divide(T const& t):scale(t){}
+                T const* scale;
+                Divide(T const& t):scale(std::addressof(t)){}
                 template<class FT>
                 //FIXME: gcc complains for Gmpq
                 //decltype(auto) operator()(FT&& x)const
                 NT operator()(FT&& x)const
                 {
                         return Rational_traits<NT>().
-                                make_rational(std::forward<FT>(x),scale);
+                                make_rational(std::forward<FT>(x),*scale);
                 }
         };
 
