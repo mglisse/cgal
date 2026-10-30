@@ -14,20 +14,22 @@
 #include <boost/type_traits/is_arithmetic.hpp>
 #include <CGAL/Dimension.h>
 #include <CGAL/NewKernel_d/utils.h>
+#include <type_traits>
 #include <vector>
 #include <boost/preprocessor/repetition.hpp>
 #include <boost/preprocessor/repetition/enum.hpp>
 namespace CGAL {
 
 //Derive from a class that doesn't depend on Dim, or still use Dim for checking?
-template<class NT_,class Dim_,class Max_dim_=Dim_> struct Vector_vector {
+template<class NT_,class Dim_,class Max_dim_=Dim_,
+         class Vector_=std::vector<NT_>> struct Vector_vector {
         typedef NT_ NT;
         typedef Dim_ Dimension;
         typedef Max_dim_ Max_dimension;
-        typedef std::vector<NT> Vector;
+        typedef Vector_ Vector;
         template< class D2, class D3=D2 >
         struct Rebind_dimension {
-          typedef Vector_vector< NT, D2, D3 > Other;
+          typedef Vector_vector< NT, D2, D3, Vector > Other;
         };
         template<class> struct Property : std::false_type {};
 
