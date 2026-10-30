@@ -53,7 +53,7 @@ template<class NT_,class Dim_,class Max_dim_=Dim_> struct Vector_vector {
                         Vector operator()(int  CGAL_assertion_code(d),Iter const& f,Iter const& e) const {
                                         CGAL_assertion(d==std::distance(f,e)+1);
                                         Vector a;
-                                        a.reserve(d+1);
+                                        a.reserve(d);
                                         a.insert(a.end(),f,e);
                                         a.push_back(1);
                                         return a;
@@ -66,7 +66,7 @@ template<class NT_,class Dim_,class Max_dim_=Dim_> struct Vector_vector {
                                 Vector operator()(int d,Iter const& f,Iter const& e,T&& t) const {
                                         CGAL_assertion(d==std::distance(f,e)+1);
                                         Vector a;
-                                        a.reserve(d+1);
+                                        a.reserve(d);
                                         a.insert(a.end(),f,e);
                                         a.push_back(std::forward<T>(t));
                                         return a;
@@ -80,7 +80,7 @@ template<class NT_,class Dim_,class Max_dim_=Dim_> struct Vector_vector {
                                 Vector operator()(int d,Iter f,Iter const& e,T const&t) const {
                                         CGAL_assertion(d==std::distance(f,e)+1);
                                         Vector a;
-                                        a.reserve(d+1);
+                                        a.reserve(d);
                                         for(;f!=e;++f){
                                                 a.push_back(*f/t);
                                         }
